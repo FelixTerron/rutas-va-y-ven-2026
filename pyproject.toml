@@ -1,0 +1,18 @@
+[project]
+name = "va-y-ven"
+version = "0.1.0"
+description = "Pipeline de datos para el mapa interactivo de rutas Va y Ven (Yucatán)"
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = []
+
+[dependency-groups]
+# Se añaden cuando se necesiten (p. ej. pandas, geopandas, gtfs-kit, jupyterlab).
+dev = ["ruff"]
+
+[tool.ruff]
+line-length = 100
+src = ["pipeline"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]

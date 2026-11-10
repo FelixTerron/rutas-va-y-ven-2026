@@ -1,0 +1,33 @@
+# --- Datos ---
+# Datos crudos (GTFS ~200 MB descomprimido): se regeneran con `pipeline.download`.
+data/raw/*
+!data/raw/.gitkeep
+
+# Datos derivados: ignorados hasta confirmar la licencia de la ATY (ver docs/DATA_SOURCES.md).
+# Cuando se confirme, relajar esta regla para publicar los archivos que consume web/.
+data/processed/*
+!data/processed/.gitkeep
+
+# --- Python ---
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+.ipynb_checkpoints/
+*.egg-info/
+
+# --- Node / web ---
+node_modules/
+web/dist/
+web/.vite/
+
+# --- Sistema / editor ---
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# --- Claude Code (config personal local) ---
+.claude/settings.local.json
