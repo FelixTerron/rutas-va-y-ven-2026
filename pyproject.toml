@@ -4,11 +4,23 @@ version = "0.1.0"
 description = "Pipeline de datos para el mapa interactivo de rutas Va y Ven (Yucatán)"
 readme = "README.md"
 requires-python = ">=3.11"
-dependencies = []
+dependencies = [
+    "geopandas",   # geometrías y uniones espaciales (trae pandas, shapely, pyproj, pyogrio)
+    "osmnx",       # descarga de calles de OpenStreetMap
+    "matplotlib",  # mapas estáticos para validar resultados
+]
 
 [dependency-groups]
-# Se añaden cuando se necesiten (p. ej. pandas, geopandas, gtfs-kit, jupyterlab).
+# Se añaden cuando se necesiten (p. ej. jupyterlab).
 dev = ["ruff"]
+
+# Defensas de cadena de suministro (ver docs/DECISIONS.md):
+# - exclude-newer: ignora versiones publicadas después de esta fecha (espera de ~7 días).
+#   Subirla a mano al actualizar dependencias, no antes de revisarlas.
+# - no-build: solo se instalan wheels ya compiladas; nunca se ejecuta código de construcción (sdist).
+[tool.uv]
+exclude-newer = "2026-11-03T00:00:00Z"
+no-build = true
 
 [tool.ruff]
 line-length = 100

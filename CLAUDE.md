@@ -29,6 +29,11 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 - `data/raw/` y `data/processed/` no se versionan (tamaño y licencia sin confirmar).
 - Cada dato externo nuevo se registra en `docs/DATA_SOURCES.md`; cada decisión relevante en `docs/DECISIONS.md`.
 
+- Dependencias de Python: no usar `uv add` sin revisar; `pyproject.toml` fija `exclude-newer` (espera de ~7 días) y
+  `no-build`. Al actualizar, subir esa fecha a mano.
+- Comandos: `PYTHONPATH=pipeline uv run python -m va_y_ven.download` y `... -m va_y_ven.coverage [weekday|saturday|sunday]`.
+
 ## Estado
-Estructura inicial. Siguiente: ingesta del GTFS (pipeline), medir cobertura de rutas (174 vs. 205 de un estudio
-de 2025), luego el mapa base. Elemento distintivo del MVP sin decidir.
+Hecho: descarga del GTFS (`download.py`), lectura (`gtfs.py`) y mapa de calor 1, rutas distintas por calle
+(`coverage.py`, salida en `data/processed/`). Siguiente: nombres de calle vía OSM, mapa de frecuencia, conciliar
+174/117/205 rutas. Elemento distintivo para el público casual sin decidir. Detalle en `docs/DECISIONS.md`.
