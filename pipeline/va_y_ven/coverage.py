@@ -24,7 +24,7 @@ import shapely
 
 from va_y_ven import gtfs
 
-CRS_METERS = 32616  # UTM 16N: cubre toda la extensión de la red (lon -89.8 a -88.1)
+CRS_METERS = gtfs.CRS_METERS
 OUT_DIR = gtfs.ROOT / "data" / "processed"
 
 

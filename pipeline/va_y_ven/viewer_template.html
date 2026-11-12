@@ -1,0 +1,436 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Va y Ven: acceso a paradas</title>
+<style>/*__MAPLIBRE_CSS__*/</style>
+<style>
+  :root { --bg:#14171c; --panel:#1c2027ee; --text:#e8eaed; --muted:#9aa3ad; --line:#323944; --accent:#ffd23f; }
+  * { box-sizing: border-box; }
+  html, body { margin:0; height:100%; background:var(--bg); color:var(--text);
+    font:14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif; }
+  #map { position:absolute; inset:0; }
+  #panel { position:absolute; top:12px; left:12px; width:310px; max-width:calc(100vw - 24px);
+    background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px;
+    backdrop-filter:blur(6px); max-height:calc(100% - 24px); overflow:auto; }
+  h1 { font-size:16px; margin:0 0 2px; }
+  .sub { color:var(--muted); font-size:12px; margin:0 0 12px; }
+  .seg { display:flex; gap:4px; margin-bottom:10px; }
+  .seg button { flex:1; padding:6px 4px; background:transparent; color:var(--muted); cursor:pointer;
+    border:1px solid var(--line); border-radius:8px; font:inherit; }
+  .seg button[aria-pressed="true"] { color:#111; background:var(--accent); border-color:var(--accent); font-weight:600; }
+  label { display:block; font-size:12px; color:var(--muted); margin-bottom:4px; }
+  input[type=range] { width:100%; accent-color:var(--accent); }
+  .legend { height:10px; border-radius:5px; margin:14px 0 4px; }
+  .ticks { display:flex; justify-content:space-between; font-size:11px; color:var(--muted); }
+  .row { display:flex; align-items:center; gap:8px; padding:5px 0; cursor:pointer; color:var(--text); font-size:13px; margin:0; }
+  .row input { accent-color:var(--accent); margin:0; }
+  .row i { width:14px; height:14px; border-radius:4px; flex:none; }
+  .row span { flex:1; }
+  .row b { font-variant-numeric:tabular-nums; }
+  .bar { height:5px; border-radius:3px; margin:0 0 3px 38px; opacity:.85; }
+  #stats { margin:12px 0 0; padding:10px 0 0; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
+  #stats b { color:var(--text); }
+  #hover { margin-top:12px; padding:10px 12px; background:#0003; border:1px solid var(--line);
+    border-radius:8px; min-height:58px; font-size:12px; color:var(--muted); }
+  #hover .n { font-size:22px; font-weight:700; color:var(--accent); line-height:1; }
+  #hover .n small { font-size:12px; font-weight:400; color:var(--muted); }
+  #hover .list { margin-top:4px; word-break:break-word; color:var(--text); }
+  .note { margin-top:10px; font-size:11px; color:var(--muted); }
+  #infobtn { width:100%; margin-top:12px; padding:7px 8px; background:transparent; color:var(--accent); cursor:pointer;
+    border:1px solid var(--line); border-radius:8px; font:inherit; font-size:13px; }
+  #infobtn:hover { border-color:var(--accent); }
+  dialog { max-width:640px; width:calc(100vw - 32px); max-height:calc(100vh - 48px); padding:0; color:var(--text);
+    background:#1c2027; border:1px solid var(--line); border-radius:12px; }
+  dialog::backdrop { background:#000a; }
+  dialog .body { padding:16px 20px; overflow:auto; max-height:calc(100vh - 120px); }
+  dialog h2 { font-size:17px; margin:0 0 4px; }
+  dialog h3 { font-size:13px; margin:16px 0 4px; color:var(--accent); }
+  dialog p, dialog li { font-size:13px; margin:4px 0; }
+  dialog ul { padding-left:18px; margin:4px 0; }
+  dialog .close { float:right; margin:12px 12px 0 0; padding:4px 10px; background:transparent; color:var(--text);
+    border:1px solid var(--line); border-radius:8px; cursor:pointer; font:inherit; }
+  .hidden { display:none; }
+  @media (max-width:600px) { #panel { width:auto; right:12px; } }
+</style>
+</head>
+<body>
+<div id="map"></div>
+<aside id="panel">
+  <h1>Va y Ven: acceso y rutas</h1>
+  <p class="sub">Servicio programado según el GTFS de la ATY. Mérida y zona conurbada.</p>
+  <div class="seg" id="modes" role="group" aria-label="Mapa">
+    <button data-mode="access" aria-pressed="true">Acceso a paradas</button>
+    <button data-mode="routes" aria-pressed="false">Rutas por calle</button>
+  </div>
+  <div class="seg" id="days" role="group" aria-label="Tipo de día"></div>
+
+  <section id="sec-access">
+    <label style="margin-bottom:6px">Caminando por calles hasta la parada más cercana (clic para ocultar/mostrar):</label>
+    <div id="classrows"></div>
+    <div class="note" id="accessnote"></div>
+  </section>
+
+  <section id="sec-routes" class="hidden">
+    <label for="min">Considerar calles con al menos <b id="minv">1</b> ruta(s)</label>
+    <input id="min" type="range" min="1" max="20" value="1">
+    <div class="legend" id="legend"></div>
+    <div class="ticks"><span>1</span><span>2</span><span>4</span><span>8</span><span>14</span><span>20+</span></div>
+    <div class="note">Cada punto es un tramo de ~10 m de calle, coloreado por cuántas rutas distintas pasan. No mide frecuencia.</div>
+  </section>
+
+  <div id="stats"></div>
+  <button id="infobtn" type="button">ⓘ Consideraciones para el análisis</button>
+  <div id="hover">Pasa el cursor sobre una calle o una parada.</div>
+  <div class="note">Datos: GTFS de la ATY. Mapa base: OpenFreeMap © OpenMapTiles, datos de OpenStreetMap.</div>
+</aside>
+<script>/*__MAPLIBRE_JS__*/</script>
+<dialog id="info">
+  <button class="close" type="button" id="infoclose">Cerrar</button>
+  <div class="body">
+    <h2>Consideraciones para el análisis</h2>
+    <p>Este visor es una herramienta exploratoria. Antes de sacar conclusiones, conviene tener presente lo siguiente.</p>
+
+    <h3>Qué datos son</h3>
+    <ul>
+      <li><b>Servicio programado, no real.</b> Viene del GTFS de la ATY (horarios y trazos publicados). No refleja retrasos,
+        cancelaciones, unidades que no salen ni desvíos temporales.</li>
+      <li><b>No hay datos de demanda.</b> No se sabe cuánta gente sube en cada parada; aquí se mide oferta, no uso.</li>
+      <li><b>Tipo de día:</b> día hábil, sábado y domingo según el calendario del feed. Los calendarios especiales
+        (p. ej. la Feria de Xmatkuil) no se incluyen.</li>
+      <li><b>Alcance:</b> Mérida y zona conurbada. Valladolid y Tizimín quedan fuera.</li>
+    </ul>
+
+    <h3>Acceso a paradas</h3>
+    <ul>
+      <li>Es la distancia <b>caminando por la red peatonal de OpenStreetMap</b> hasta la parada más cercana con servicio ese
+        día. Si OSM tiene calles faltantes, cruces mal conectados o barreras (vías del tren, avenidas sin cruce), la
+        distancia puede salir mayor a la real.</li>
+      <li><b>Los porcentajes son de longitud de calle, no de personas.</b> Una calle sin casas cuenta igual que una
+        densa. Para hablar de población atendida falta ponderar con datos de INEGI.</li>
+      <li>Solo cuenta la <b>cercanía</b>. No considera frecuencia, hora, sentido de la ruta (la parada puede servir
+        solo al lado contrario), destino ni transbordos. Una parada con 14 viajes al día cuenta igual que una con 200.</li>
+      <li>Los minutos se calculan a 5 km/h. No se toman en cuenta banquetas, seguridad, calor ni pendiente.</li>
+      <li>«Más de 2 km o sin conexión» junta calles lejanas y calles desconectadas de la red.</li>
+    </ul>
+
+    <h3>Cuadrícula de 100 m</h3>
+    <ul>
+      <li>Cada celda muestra la <b>mediana</b> de sus calles; al pasar el cursor se ve también el rango (mín–máx).
+        La mediana oculta variación dentro de la celda.</li>
+      <li><b>Celdas estimadas:</b> las celdas sin calles propias pero rodeadas por celdas con calle (al menos 7 de 8
+        vecinas, por ejemplo el interior de una manzana grande) se rellenan con la mediana de sus vecinas para que no
+        queden huecos negros. Son <b>estimaciones, no datos</b>: <span id="filledn">unas pocas</span>. Al pasar el cursor
+        se indican como tales.</li>
+      <li>El tamaño y posición de las celdas son arbitrarios: otra cuadrícula daría cifras ligeramente distintas.</li>
+    </ul>
+
+    <h3>Rutas por calle</h3>
+    <ul>
+      <li>Cuenta <b>rutas base distintas</b> (las variantes de una misma ruta cuentan como una) que pasan a menos de 12 m
+        de cada punto, muestreado cada ~10 m. Depende de la exactitud de los trazos del GTFS.</li>
+      <li><b>No mide frecuencia ni capacidad.</b> Una calle con 5 rutas de un viaje al día se ve igual que una con
+        5 rutas cada 5 minutos.</li>
+      <li>No distingue sentidos: si una ruta pasa en ambos sentidos por la misma calle cuenta una vez.</li>
+    </ul>
+
+    <h3>Uso de los datos</h3>
+    <ul>
+      <li>Las condiciones de uso de los datos de la ATY siguen sin confirmarse: este visor es de uso privado y no está
+        publicado.</li>
+      <li>Si lo usas en un análisis, cita las fuentes: GTFS de la ATY, red peatonal y mapa base de © OpenStreetMap
+        (ODbL, vía OpenFreeMap / OpenMapTiles).</li>
+    </ul>
+  </div>
+</dialog>
+<script type="text/plain" id="app">
+// Formato de DATA (generado por viewer.py). Coordenadas = entero / 1e5.
+//   sets: lista de conjuntos de rutas ("26,31,..."), indexada por set_id
+//   days[d].routes.flat = [lon,lat,n_rutas,set_id, ...]   days[d].routes.stats
+//   grid = {dlon, dlat}: tamaño de celda (~100 m) en grados
+//   days[d].access.grid = [ix,iy,mediana,mínimo,máximo,estimada(0/1), ...] celda = [ix*dlon, iy*dlat] + (dlon, dlat)
+//   days[d].access.dots = {flat:[lon,lat,metros, ...] ordenado por bloque, keys, starts, counts}
+//   blocks = {lon0, lat0, deg}: bloque (bx,by) = floor((lon-lon0)/deg), floor((lat-lat0)/deg); clave = bx*1000+by
+//   (9999 metros = más de 2 km o sin conexión)
+//   days[d].stops = [[lon,lat,nombre,viajes_al_dia,rutas_base], ...]
+const DATA = window.__DATA;  // la descomprime el cargador del final de la página
+
+const CLASS_COLORS = ['#2ec4b6', '#9be15d', '#ffd23f', '#ff8c42', '#ff2e63'];
+const CLASS_LABELS = ['Hasta 200 m (≈ 3 min)', '201 a 400 m (≈ 5 min)', '401 a 800 m (≈ 10 min)',
+  '801 m a 2 km', 'Más de 2 km o sin conexión'];
+const RAMP = [[1,'#5b8def'],[2,'#2ec4b6'],[4,'#9be15d'],[8,'#ffd23f'],[14,'#ff8c42'],[20,'#ff2e63']];
+document.getElementById('legend').style.background =
+  'linear-gradient(90deg,' + RAMP.map(([, c]) => c).join(',') + ')';
+
+let mode = 'access', day = 'weekday';
+const activeClasses = new Set([0, 1, 2, 3, 4]);
+const cleanName = n => n.replace(/_\d+$/, '');
+
+const map = new maplibregl.Map({
+  container: 'map', center: [-89.62, 20.97], zoom: 11.3, minZoom: 8, maxZoom: 18,
+  // OpenFreeMap: gratuito, sin llave ni límites, datos de OpenStreetMap (atribución automática).
+  // No se usa tile.openstreetmap.org: su política bloquea páginas sin Referer (file://).
+  style: 'https://tiles.openfreemap.org/styles/dark'
+});
+map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
+map.addControl(new maplibregl.ScaleControl(), 'bottom-left');
+
+// Memoria (aprendizajes): cientos de miles de objetos GeoJSON tumbaron la pestaña. Por eso:
+//  - la vista de ciudad es una cuadrícula de ~100 m (~48 mil celdas en vez de 375 mil puntos);
+//  - los puntos calle por calle solo se cargan para la zona visible y a zoom >= DOTS_MINZOOM;
+//  - solo se carga la vista visible, y no coexisten dos conjuntos grandes.
+// (Pasar GeoJSON como URL de Blob ahorra más memoria, pero el worker de MapLibre no puede leer URLs
+// blob: cuando la página se abre como file://.)
+const DOTS_MINZOOM = 14.6;
+const GRID_OPACITY = 0.7;  // opacidad de la cuadrícula de ciudad (0 = invisible, 1 = opaca)
+const EMPTY = { type: 'FeatureCollection', features: [] };
+function featureCollection(flat, stride, props) {
+  const out = new Array(flat.length / stride);
+  for (let i = 0, j = 0; i < flat.length; i += stride, j++)
+    out[j] = { type: 'Feature', properties: props(flat, i),
+      geometry: { type: 'Point', coordinates: [flat[i] / 1e5, flat[i + 1] / 1e5] } };
+  return { type: 'FeatureCollection', features: out };
+}
+function gridCollection(flat) {  // celdas como cuadrados alineados con la pantalla
+  const { dlon, dlat } = DATA.grid, out = new Array(flat.length / 6);
+  for (let i = 0, j = 0; i < flat.length; i += 6, j++) {
+    const x0 = flat[i] * dlon, y0 = flat[i + 1] * dlat, x1 = x0 + dlon, y1 = y0 + dlat;
+    out[j] = { type: 'Feature', properties: { d: flat[i + 2], lo: flat[i + 3], hi: flat[i + 4], est: flat[i + 5] },
+      geometry: { type: 'Polygon', coordinates: [[[x0, y0], [x1, y0], [x1, y1], [x0, y1], [x0, y0]]] } };
+  }
+  return { type: 'FeatureCollection', features: out };
+}
+const SOURCES = {
+  grid: day => gridCollection(DATA.days[day].access.grid),
+  routes: day => featureCollection(DATA.days[day].routes.flat, 4, (f, i) => ({ n: f[i + 2], s: f[i + 3] })),
+};
+const viewSource = () => (mode === 'access' ? 'grid' : 'routes');
+const loadedDay = { grid: null, routes: null }, token = { grid: 0, routes: 0 };
+// Carga (o recarga si cambió el día) los datos de la vista indicada: primero se vacía el anterior y
+// el nuevo se construye un instante después.
+function ensureSource(id) {
+  if (loadedDay[id] === day) return;
+  loadedDay[id] = day;
+  const mine = ++token[id], src = map.getSource(id);
+  src.setData(EMPTY);
+  setTimeout(() => {
+    if (token[id] !== mine) return;  // llegó una orden más reciente (cambio rápido de día o de vista)
+    src.setData(SOURCES[id](day));
+  }, 60);
+}
+function releaseSource(id) {  // libera la memoria de la vista que se oculta
+  token[id]++; loadedDay[id] = null;
+  map.getSource(id).setData(EMPTY);
+}
+
+// Puntos calle por calle: solo los bloques (~1.1 km) de la zona visible, con un margen del 25 %.
+const dotIndexCache = {};
+function dotIndex() {
+  const a = DATA.days[day].access.dots;
+  return dotIndexCache[day] ??= new Map(a.keys.map((k, i) => [k, [a.starts[i], a.counts[i]]]));
+}
+let dotsKey = '';
+function updateDots() {
+  const src = map.getSource('dots');
+  if (!src) return;
+  if (mode !== 'access' || map.getZoom() < DOTS_MINZOOM) {
+    if (dotsKey) { src.setData(EMPTY); dotsKey = ''; }
+    return;
+  }
+  const b = map.getBounds(), B = DATA.blocks;
+  const padX = (b.getEast() - b.getWest()) * 0.25, padY = (b.getNorth() - b.getSouth()) * 0.25;
+  const bx0 = Math.floor((b.getWest() - padX - B.lon0) / B.deg), bx1 = Math.floor((b.getEast() + padX - B.lon0) / B.deg);
+  const by0 = Math.floor((b.getSouth() - padY - B.lat0) / B.deg), by1 = Math.floor((b.getNorth() + padY - B.lat0) / B.deg);
+  const key = `${day}|${bx0},${bx1},${by0},${by1}`;
+  if (key === dotsKey) return;  // sigue viéndose la misma zona
+  dotsKey = key;
+  const a = DATA.days[day].access.dots, index = dotIndex(), feats = [];
+  for (let bx = bx0; bx <= bx1; bx++) for (let by = by0; by <= by1; by++) {
+    const e = index.get(bx * 1000 + by);
+    if (!e) continue;
+    for (let i = e[0]; i < e[0] + e[1]; i++) {
+      const j = i * 3;
+      feats.push({ type: 'Feature', properties: { d: a.flat[j + 2] },
+        geometry: { type: 'Point', coordinates: [a.flat[j] / 1e5, a.flat[j + 1] / 1e5] } });
+    }
+  }
+  src.setData({ type: 'FeatureCollection', features: feats });
+}
+map.on('moveend', updateDots);
+const stopsData = () => ({ type: 'FeatureCollection', features: DATA.days[day].stops.map(
+  ([lon, lat, name, trips, routes]) => ({ type: 'Feature', properties: { name: cleanName(name), trips, routes },
+    geometry: { type: 'Point', coordinates: [lon / 1e5, lat / 1e5] } })) });
+
+// Los puntos van cada 25 m: a zoom alto el radio crece para que se lean como línea, no punteado.
+const dotRadius = ['interpolate', ['linear'], ['zoom'], 9, 0.7, 13, 2.2, 15, 3.6, 16, 5.5, 17, 9, 18, 15];
+map.on('style.load', () => {
+  // Las fuentes grandes nacen vacías y se llenan solo para la vista visible (ver ensureSource).
+  map.addSource('grid', { type: 'geojson', data: EMPTY });
+  map.addSource('dots', { type: 'geojson', data: EMPTY });
+  map.addSource('routes', { type: 'geojson', data: EMPTY });
+  map.addSource('stops', { type: 'geojson', data: stopsData() });
+  // Encima de las calles del mapa base pero debajo de sus etiquetas: se inserta antes del primer
+  // símbolo que viene DESPUÉS de la última capa geométrica.
+  const layers = map.getStyle().layers;
+  let lastGeom = -1;
+  layers.forEach((l, i) => { if (l.type !== 'symbol') lastGeom = i; });
+  const before = layers.slice(lastGeom + 1)[0]?.id;
+  const classColor = ['step', ['get', 'd'], CLASS_COLORS[0], 201, CLASS_COLORS[1], 401, CLASS_COLORS[2],
+    801, CLASS_COLORS[3], 2001, CLASS_COLORS[4]];
+  // Cuadrícula (zoom de ciudad): va DEBAJO de las calles y vías del mapa base (así las calles, que en
+  // este estilo son grises oscuros, se dibujan como líneas sobre el color y se distinguen) y con
+  // transparencia. Se desvanece al acercarse y dar paso a los puntos.
+  const belowRoads = layers.find(l => ['aeroway', 'transportation'].includes(l['source-layer']))?.id ?? before;
+  map.addLayer({ id: 'grid', type: 'fill', source: 'grid', paint: {
+    'fill-color': classColor, 'fill-antialias': false,
+    'fill-opacity': ['interpolate', ['linear'], ['zoom'], 14.6, GRID_OPACITY, 15.4, 0] } }, belowRoads);
+  // Nombres de calles y colonias con más contraste: el gris oscuro original no se lee sobre el color.
+  for (const l of layers) {
+    if (l.type !== 'symbol' || !['transportation_name', 'place'].includes(l['source-layer'])) continue;
+    map.setPaintProperty(l.id, 'text-color', l['source-layer'] === 'place' ? '#c9cfd6' : '#dde1e6');
+    map.setPaintProperty(l.id, 'text-halo-color', '#0e1013');
+    map.setPaintProperty(l.id, 'text-halo-width', 1.4);
+  }
+  // Puntos, rutas y paradas: encima de las calles pero DEBAJO de los nombres de calles (que se leen).
+  const belowNames = layers.find(l => l['source-layer'] === 'transportation_name')?.id ?? before;
+  map.addLayer({ id: 'dots', type: 'circle', source: 'dots', paint: {
+    'circle-color': classColor, 'circle-radius': dotRadius,
+    'circle-opacity': ['interpolate', ['linear'], ['zoom'], 14.8, 0, 15.5, 0.85] } }, belowNames);
+  map.addLayer({ id: 'routes', type: 'circle', source: 'routes', layout: { 'circle-sort-key': ['get', 'n'] }, paint: {
+    'circle-color': ['interpolate', ['linear'], ['get', 'n'], ...RAMP.flat()],
+    'circle-radius': dotRadius, 'circle-opacity': 0.85 } }, belowNames);
+  map.addLayer({ id: 'stops', type: 'circle', source: 'stops', minzoom: 14, paint: {
+    'circle-color': '#ffffff', 'circle-stroke-color': '#14171c', 'circle-stroke-width': 1,
+    'circle-radius': ['interpolate', ['linear'], ['zoom'], 14, 2.5, 17, 6] } }, belowNames);
+  applyMode(); applyClassFilter(); showStats();
+});
+
+function applyMode() {
+  if (!map.getLayer('grid')) return;
+  const a = mode === 'access';
+  for (const id of ['grid', 'dots', 'stops']) map.setLayoutProperty(id, 'visibility', a ? 'visible' : 'none');
+  map.setLayoutProperty('routes', 'visibility', a ? 'none' : 'visible');
+  document.getElementById('sec-access').classList.toggle('hidden', !a);
+  document.getElementById('sec-routes').classList.toggle('hidden', a);
+  document.getElementById('hover').textContent = 'Pasa el cursor sobre una calle' + (a ? ' o una parada.' : '.');
+  releaseSource(a ? 'routes' : 'grid');
+  ensureSource(viewSource());
+  updateDots();  // en la vista de rutas se descargan los puntos de acceso
+}
+// La clase (0..4) se deduce de la distancia 'd' con la misma regla de color: una sola propiedad por elemento.
+const CLASS_EXPR = ['step', ['get', 'd'], 0, 201, 1, 401, 2, 801, 3, 2001, 4];
+function applyClassFilter() {
+  if (!map.getLayer('grid')) return;
+  const f = ['in', CLASS_EXPR, ['literal', [...activeClasses]]];
+  map.setFilter('grid', f); map.setFilter('dots', f);
+}
+
+function showStats() {
+  const d = DATA.days[day], a = d.access.stats, r = d.routes.stats;
+  document.getElementById('classrows').innerHTML = CLASS_LABELS.map((label, k) =>
+    `<label class="row"><input type="checkbox" data-c="${k}" ${activeClasses.has(k) ? 'checked' : ''}>` +
+    `<i style="background:${CLASS_COLORS[k]}"></i><span>${label}</span><b>${a.pct[k]}%</b></label>` +
+    `<div class="bar" style="width:${Math.max(1, a.pct[k]) * 0.85}%;background:${CLASS_COLORS[k]}"></div>`).join('');
+  for (const cb of document.querySelectorAll('#classrows input')) cb.onchange = () => {
+    cb.checked ? activeClasses.add(+cb.dataset.c) : activeClasses.delete(+cb.dataset.c);
+    applyClassFilter(); };
+  document.getElementById('accessnote').textContent =
+    `Porcentajes sobre la red peatonal de OpenStreetMap (${a.km.toLocaleString('es-MX')} km a ≤ 2.5 km de una parada), ` +
+    `no sobre la población: una calle sin casas cuenta igual. Paradas con servicio: ${a.stops.toLocaleString('es-MX')}. ` +
+    `De lejos se ve una cuadrícula de 100 m con la mediana de sus calles; al acercarse (zoom 15) y las paradas (zoom 14), ` +
+    `las calles punto por punto.`;
+  document.getElementById('filledn').textContent = Object.values(DATA.days).map(x =>
+    `${x.label}: ${x.access.stats.filled.toLocaleString('es-MX')} de ${x.access.stats.cells.toLocaleString('es-MX')} celdas`).join('; ');
+  document.getElementById('stats').innerHTML = mode === 'access'
+    ? `<b>${a.pct[0] + a.pct[1]}%</b> de la calle está a ≤ 400 m caminando de una parada · ` +
+      `<b>${a.pct[3] + a.pct[4]}%</b> a más de 800 m`
+    : `<b>${r.routes}</b> rutas base operan · <b>${r.km.toLocaleString('es-MX')}</b> km de calle con servicio<br>` +
+      `Máximo <b>${r.max}</b> rutas · mediana <b>${r.median}</b> · <b>${r.single_pct}%</b> de la calle tiene una sola ruta`;
+}
+
+const modeBox = document.getElementById('modes');
+for (const b of modeBox.children) b.onclick = () => {
+  mode = b.dataset.mode;
+  for (const x of modeBox.children) x.setAttribute('aria-pressed', x === b);
+  applyMode(); showStats(); };
+
+const dayBox = document.getElementById('days');
+for (const [key, d] of Object.entries(DATA.days)) {
+  const b = document.createElement('button');
+  b.textContent = d.label; b.setAttribute('aria-pressed', key === day);
+  b.onclick = () => { day = key;
+    for (const x of dayBox.children) x.setAttribute('aria-pressed', x === b);
+    ensureSource(viewSource());  // la otra vista queda pendiente hasta que se abra
+    map.getSource('stops').setData(stopsData());
+    updateDots();
+    showStats(); };
+  dayBox.appendChild(b);
+}
+
+const min = document.getElementById('min'), minv = document.getElementById('minv');
+min.oninput = () => { minv.textContent = min.value;
+  map.setFilter('routes', ['>=', ['get', 'n'], +min.value]); };
+
+// Ventana de consideraciones para el análisis.
+const info = document.getElementById('info');
+document.getElementById('infobtn').onclick = () => info.showModal();
+document.getElementById('infoclose').onclick = () => info.close();
+info.onclick = e => { if (e.target === info) info.close(); };  // clic fuera = cerrar
+
+// Hover: la parada o el punto de calle más cercano al cursor.
+const hover = document.getElementById('hover');
+const nearest = (feats, e) => feats.reduce((best, f) => {
+  const p = map.project(f.geometry.coordinates), d = (p.x - e.point.x) ** 2 + (p.y - e.point.y) ** 2;
+  return !best || d < best.d ? { f, d } : best; }, null)?.f;
+const meters = v => (v >= 9999 ? 'más de 2 km' : `${v} m`);
+map.on('mousemove', e => {
+  if (!map.getLayer('grid')) return;
+  const around = r => [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
+  const q = (layer, r) => map.queryRenderedFeatures(around(r), { layers: [layer] });
+  const zoom = map.getZoom(), inDots = zoom >= 15.2;
+  const stop = mode === 'access' && zoom >= 14 ? nearest(q('stops', 7), e) : null;
+  let f = stop;
+  if (!f) f = mode === 'routes' ? nearest(q('routes', 7), e)
+    : inDots ? nearest(q('dots', 7), e) : map.queryRenderedFeatures(e.point, { layers: ['grid'] })[0];
+  map.getCanvas().style.cursor = f ? 'pointer' : '';
+  if (!f) return;
+  const p = f.properties;
+  if (stop) {
+    hover.innerHTML = `<div class="n">Parada</div><div class="list"><b>${p.name}</b><br>` +
+      `${p.trips} viajes al día · ${p.routes} ruta(s) base</div>`;
+  } else if (mode === 'access' && inDots) {
+    hover.innerHTML = `<div class="n">${meters(p.d)} <small>caminando a la parada más cercana</small></div>` +
+      `<div class="list">≈ ${p.d >= 9999 ? '—' : Math.round(p.d / 80)} min a 5 km/h</div>`;
+  } else if (mode === 'access') {
+    hover.innerHTML = p.est
+      ? `<div class="n">${meters(p.d)} <small>estimada (celda sin calles propias)</small></div>` +
+        `<div class="list">Mediana de las celdas vecinas, que van de ${meters(p.lo)} a ${meters(p.hi)}. No es un dato medido.</div>`
+      : `<div class="n">${meters(p.d)} <small>mediana en esta celda de ~100 m</small></div>` +
+        `<div class="list">Sus calles van de ${meters(p.lo)} a ${meters(p.hi)}. Acércate (zoom 15) para ver calle por calle.</div>`;
+  } else {
+    hover.innerHTML = `<div class="n">${p.n} <small>rutas</small></div>` +
+      `<div class="list">${DATA.sets[p.s].split(',').map(r => 'R' + r).join('  ')}</div>`;
+  }
+});
+</script>
+<script type="application/octet-stream" id="data-gz">/*__DATA_GZ__*/</script>
+<script>
+// Los datos viajan comprimidos (gzip + base64) y la app arranca al descomprimirlos.
+(async () => {
+  try {
+    const b64 = document.getElementById('data-gz').textContent.trim();
+    const bytes = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream('gzip'));
+    window.__DATA = await new Response(stream).json();
+    const app = document.createElement('script');
+    app.textContent = document.getElementById('app').textContent;
+    document.body.appendChild(app);
+  } catch (err) {
+    document.getElementById('hover').textContent = 'No se pudieron leer los datos: ' + err.message +
+      ' (hace falta un navegador reciente: Chrome, Edge, Safari 16.4+ o Firefox 113+).';
+  }
+})();
+</script>
+</body>
+</html>

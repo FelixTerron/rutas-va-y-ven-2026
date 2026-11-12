@@ -31,9 +31,14 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 
 - Dependencias de Python: no usar `uv add` sin revisar; `pyproject.toml` fija `exclude-newer` (espera de ~7 días) y
   `no-build`. Al actualizar, subir esa fecha a mano.
-- Comandos: `PYTHONPATH=pipeline uv run python -m va_y_ven.download` y `... -m va_y_ven.coverage [weekday|saturday|sunday]`.
+- Comandos (todos con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`): `download` (GTFS), `streets` (red
+  peatonal de OSM, una vez), `coverage` y `access` `[weekday|saturday|sunday]`, y `viewer` (genera
+  `data/processed/mapa.html`, ~45 s; `open data/processed/mapa.html` para verlo).
+- Visor: MapLibre 5.24.0 incrustado y verificado por huella; sin `file://` + URLs `blob:` (ver `docs/DECISIONS.md`).
+- Alcance: solo Mérida y zona conurbada (`gtfs.shapes(area="merida")`); Valladolid y Tizimín quedan fuera.
 
 ## Estado
-Hecho: descarga del GTFS (`download.py`), lectura (`gtfs.py`) y mapa de calor 1, rutas distintas por calle
-(`coverage.py`, salida en `data/processed/`). Siguiente: nombres de calle vía OSM, mapa de frecuencia, conciliar
+Hecho: descarga del GTFS (`download.py`), lectura (`gtfs.py`), rutas distintas por calle (`coverage.py`), acceso
+caminando a la parada más cercana con la red de OSM (`streets.py`, `access.py`) y un visor HTML local de ambos
+(`viewer.py`). Siguiente: acceso ponderado por población (INEGI), calidad de servicio, nombres de calle, conciliar
 174/117/205 rutas. Elemento distintivo para el público casual sin decidir. Detalle en `docs/DECISIONS.md`.

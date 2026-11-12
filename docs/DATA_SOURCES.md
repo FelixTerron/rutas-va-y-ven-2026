@@ -16,6 +16,16 @@
 - [ ] **Cobertura.** El feed trae 174 `route_id`; un estudio de 2025 menciona 205 rutas. Medir si son variantes o rutas faltantes.
 - [ ] **Estabilidad de la URL.** Es un servicio de terceros; registrar versión del feed en cada descarga.
 
+## Red peatonal: OpenStreetMap
+
+| Campo | Valor |
+|---|---|
+| Fuente | OpenStreetMap vía API Overpass, con `osmnx` (`network_type="walk"`) |
+| Descarga | 2026-11-11, caja de las paradas con servicio + ~2 km; 79,051 nodos, 239,452 tramos dirigidos |
+| Ubicación | `data/raw/osm/merida_walk.graphml` (~93 MB, ignorado por git); código en `pipeline/va_y_ven/streets.py` |
+| Licencia | ODbL © colaboradores de OpenStreetMap: atribuir; si se publican derivados, compartirlos bajo la misma licencia |
+| Vigencia | Es una foto de esa fecha; si cambia la red vial o se mapean cruces nuevos, hay que volver a descargar |
+
 ## Demanda / abordajes por parada (para el mapa de calor de pasajeros)
 
 **Estado (2026-11-10):** no se encontró ningún dato público de validaciones, ascensos por parada ni afluencia desglosada. Solo hay cifras sueltas en prensa (p. ej. la ATY reporta ~10 % menos afluencia en vacaciones escolares; filas largas en rutas como la 28 y la 74). El GTFS no incluye demanda.
