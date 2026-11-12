@@ -119,7 +119,7 @@
     <ul>
       <li>Cada celda muestra la <b>mediana</b> de sus calles; al pasar el cursor se ve también el rango (mín–máx).
         La mediana oculta variación dentro de la celda.</li>
-      <li><b>Celdas estimadas:</b> las celdas sin calles propias pero rodeadas por celdas con calle (al menos 7 de 8
+      <li><b>Celdas estimadas:</b> las celdas sin calles propias pero rodeadas por celdas con calle (al menos <span id="fillmin">7</span> de 8
         vecinas, por ejemplo el interior de una manzana grande) se rellenan con la mediana de sus vecinas para que no
         queden huecos negros. Son <b>estimaciones, no datos</b>: <span id="filledn">unas pocas</span>. Al pasar el cursor
         se indican como tales.</li>
@@ -157,7 +157,7 @@
 const DATA = window.__DATA;  // la descomprime el cargador del final de la página
 
 const CLASS_COLORS = ['#2ec4b6', '#9be15d', '#ffd23f', '#ff8c42', '#ff2e63'];
-const CLASS_LABELS = ['Hasta 200 m (≈ 3 min)', '201 a 400 m (≈ 5 min)', '401 a 800 m (≈ 10 min)',
+const CLASS_LABELS = ['Hasta 200 m (≈ 2.5 min)', '201 a 400 m (≈ 5 min)', '401 a 800 m (≈ 10 min)',
   '801 m a 2 km', 'Más de 2 km o sin conexión'];
 const RAMP = [[1,'#5b8def'],[2,'#2ec4b6'],[4,'#9be15d'],[8,'#ffd23f'],[14,'#ff8c42'],[20,'#ff2e63']];
 document.getElementById('legend').style.background =
@@ -166,6 +166,8 @@ document.getElementById('legend').style.background =
 let mode = 'access', day = 'weekday';
 const activeClasses = new Set([0, 1, 2, 3, 4]);
 const cleanName = n => n.replace(/_\d+$/, '');
+// El GTFS lo publica un tercero: todo texto suyo que entre como HTML se escapa.
+const escapeHtml = t => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
 const map = new maplibregl.Map({
   container: 'map', center: [-89.62, 20.97], zoom: 11.3, minZoom: 8, maxZoom: 18,
@@ -340,6 +342,7 @@ function showStats() {
     `no sobre la población: una calle sin casas cuenta igual. Paradas con servicio: ${a.stops.toLocaleString('es-MX')}. ` +
     `De lejos se ve una cuadrícula de 100 m con la mediana de sus calles; al acercarse (zoom 15) y las paradas (zoom 14), ` +
     `las calles punto por punto.`;
+  document.getElementById('fillmin').textContent = DATA.grid.fill_min;
   document.getElementById('filledn').textContent = Object.values(DATA.days).map(x =>
     `${x.label}: ${x.access.stats.filled.toLocaleString('es-MX')} de ${x.access.stats.cells.toLocaleString('es-MX')} celdas`).join('; ');
   document.getElementById('stats').innerHTML = mode === 'access'
@@ -383,6 +386,7 @@ const hover = document.getElementById('hover');
 const nearest = (feats, e) => feats.reduce((best, f) => {
   const p = map.project(f.geometry.coordinates), d = (p.x - e.point.x) ** 2 + (p.y - e.point.y) ** 2;
   return !best || d < best.d ? { f, d } : best; }, null)?.f;
+const WALK_M_PER_MIN = 5000 / 60;  // 5 km/h
 const meters = v => (v >= 9999 ? 'más de 2 km' : `${v} m`);
 map.on('mousemove', e => {
   if (!map.getLayer('grid')) return;
@@ -397,11 +401,11 @@ map.on('mousemove', e => {
   if (!f) return;
   const p = f.properties;
   if (stop) {
-    hover.innerHTML = `<div class="n">Parada</div><div class="list"><b>${p.name}</b><br>` +
+    hover.innerHTML = `<div class="n">Parada</div><div class="list"><b>${escapeHtml(p.name)}</b><br>` +
       `${p.trips} viajes al día · ${p.routes} ruta(s) base</div>`;
   } else if (mode === 'access' && inDots) {
     hover.innerHTML = `<div class="n">${meters(p.d)} <small>caminando a la parada más cercana</small></div>` +
-      `<div class="list">≈ ${p.d >= 9999 ? '—' : Math.round(p.d / 80)} min a 5 km/h</div>`;
+      `<div class="list">≈ ${p.d >= 9999 ? '—' : Math.round(p.d / WALK_M_PER_MIN)} min a 5 km/h</div>`;
   } else if (mode === 'access') {
     hover.innerHTML = p.est
       ? `<div class="n">${meters(p.d)} <small>estimada (celda sin calles propias)</small></div>` +

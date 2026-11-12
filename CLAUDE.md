@@ -18,7 +18,8 @@ antes de sugerir un commit, revisar `git status` y confirmar que no hay datos ni
 Español para docs, comentarios y comunicación. Identificadores de código en inglés, salvo términos de dominio.
 
 ## Convenciones
-- Python ≥ 3.11 gestionado con `uv`; lint con `ruff` (`uv run ruff check pipeline`).
+- Python ≥ 3.11 gestionado con `uv`; lint con `ruff` (`uv run ruff check pipeline`); pruebas con
+  `PYTHONPATH=pipeline uv run python pipeline/tests/test_pipeline.py` (sin dependencias nuevas).
 - Código del pipeline en `pipeline/va_y_ven/`. Ejecutar con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`.
 - Web: TypeScript + Vite + MapLibre GL JS en `web/` (pendiente de crear). Node 24.22.2 vía `fnm` (`.node-version`),
   pnpm 12.17.0 vía Corepack. Usar siempre **pnpm** (no npm). Antes de ejecutar: `eval "$(fnm env --shell bash)" && fnm use`.

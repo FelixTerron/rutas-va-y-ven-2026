@@ -20,6 +20,7 @@ Uso (desde la raíz del repo):
 
 from __future__ import annotations
 
+import functools
 import sys
 from pathlib import Path
 
@@ -41,19 +42,39 @@ MAX_SNAP_M = 150.0  # una parada a más de esto de cualquier calle peatonal se d
 CLASSES = [(200, "≤200 m"), (400, "201-400 m"), (800, "401-800 m"), (MAX_M, "801-2000 m")]
 
 
-def walk_access(day_type: str = "weekday", step_m: float = 25.0) -> tuple[gpd.GeoDataFrame, dict]:
-    stops = gtfs.stops_served(day_type).to_crs(CRS_METERS)
+@functools.cache
+def walk_edges() -> gpd.GeoDataFrame:
+    """Tramos de la red peatonal en metros, uno por tramo no dirigido (se calcula una sola vez).
+
+    La red trae ambos sentidos. Se conserva la orientación de la fila elegida: la geometría siempre
+    corre del nodo ``u`` (s = 0) al ``v``. Dos tramos distintos entre los mismos nodos (p. ej. un
+    camino curvo y uno recto) se conservan los dos; ver ``shortest_by_pair`` para el grafo.
+    """
     graph = ox.project_graph(streets.walk_graph(), to_crs=CRS_METERS)
     _, edges = ox.graph_to_gdfs(graph)
     edges = edges.reset_index()  # u, v, key, geometry, length...
-
-    # Una fila por tramo no dirigido (la red peatonal trae ambos sentidos). Se conserva la
-    # orientación de la fila elegida: la geometría siempre corre del nodo ``u`` (s = 0) al ``v``.
     edges["lo"] = edges[["u", "v"]].min(axis=1)
     edges["hi"] = edges[["u", "v"]].max(axis=1)
     edges["len_m"] = edges.geometry.length
     edges["len_key"] = edges["len_m"].round(1)  # ida y vuelta pueden diferir en el último decimal
-    edges = edges.drop_duplicates(["lo", "hi", "len_key"]).reset_index(drop=True)
+    return edges.drop_duplicates(["lo", "hi", "len_key"]).reset_index(drop=True)
+
+
+def shortest_by_pair(u, v, length) -> pd.DataFrame:
+    """Largo mínimo por par de nodos. ``nx.Graph`` guarda una sola arista por par y se queda con la
+    última que recibe: si fuera la larga, las distancias saldrían de más."""
+    df = pd.DataFrame({"lo": np.minimum(u, v), "hi": np.maximum(u, v), "len_m": length})
+    return df.groupby(["lo", "hi"], as_index=False)["len_m"].min()
+
+
+def walk_access(
+    day_type: str = "weekday", step_m: float = 25.0, stops: gpd.GeoDataFrame | None = None
+) -> tuple[gpd.GeoDataFrame, dict]:
+    """``stops``: paradas ya leídas (``gtfs.stops_served``); si no se pasan, se leen aquí."""
+    if stops is None:
+        stops = gtfs.stops_served(day_type)
+    stops = stops.to_crs(CRS_METERS)
+    edges = walk_edges()
     lines = edges.geometry.to_numpy()
     start, end = edges["u"].to_numpy(), edges["v"].to_numpy()
 
@@ -69,7 +90,8 @@ def walk_access(day_type: str = "weekday", step_m: float = 25.0) -> tuple[gpd.Ge
 
     # Dijkstra multi-origen con una fuente virtual "S".
     g = nx.Graph()
-    g.add_weighted_edges_from(zip(start, end, edges["len_m"], strict=True))
+    pairs = shortest_by_pair(start, end, edges["len_m"].to_numpy())
+    g.add_weighted_edges_from(zip(pairs["lo"], pairs["hi"], pairs["len_m"], strict=True))
     lengths = edges["len_m"].to_numpy()
     for e, d0, s in zip(edge_idx, snap, s_stop, strict=True):
         for node, extra in ((start[e], s), (end[e], lengths[e] - s)):

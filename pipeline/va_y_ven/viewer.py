@@ -87,6 +87,12 @@ FILL_MIN_NEIGHBORS = 7
 _NEIGHBORS = [(dx, dy) for dx in (-1, 0, 1) for dy in (-1, 0, 1) if (dx, dy) != (0, 0)]
 
 
+def _snap_unreached(median):
+    """Una mediana entre MAX_M y UNREACHED_M mezcla calles alcanzables con las marcadas 9999 (p. ej.
+    5074 m, que no es una distancia real): se lleva a UNREACHED_M. Vale para valores y arreglos."""
+    return np.where(np.asarray(median) > access.MAX_M, access.UNREACHED_M, median)
+
+
 def _holes(cells: dict[tuple[int, int], int]) -> list[tuple[int, int, int, int, int]]:
     """Celdas vacías con vecinas suficientes: (ix, iy, mediana, mín, máx) de las vecinas."""
     candidates = {(x + dx, y + dy) for x, y in cells for dx, dy in _NEIGHBORS} - cells.keys()
@@ -94,7 +100,8 @@ def _holes(cells: dict[tuple[int, int], int]) -> list[tuple[int, int, int, int, 
     for x, y in candidates:
         vals = [cells[n] for dx, dy in _NEIGHBORS if (n := (x + dx, y + dy)) in cells]
         if len(vals) >= FILL_MIN_NEIGHBORS:
-            out.append((x, y, round(statistics.median(vals)), min(vals), max(vals)))
+            median = int(_snap_unreached(round(statistics.median(vals))))
+            out.append((x, y, median, min(vals), max(vals)))
     return out
 
 
@@ -111,7 +118,7 @@ def _grid(walk) -> tuple[list[int], int, int]:
         }
     )
     g = cells.groupby(["ix", "iy"])["d"].agg(["median", "min", "max"]).reset_index()
-    g["median"] = g["median"].round()
+    g["median"] = _snap_unreached(g["median"].round())
     g["est"] = 0
     occupied = zip(g["ix"], g["iy"], g["median"], strict=True)
     holes = _holes({(int(x), int(y)): int(m) for x, y, m in occupied})
@@ -150,14 +157,14 @@ def build_data() -> dict:
         )
         used = {r for s in density["routes"].unique() for r in s.split(",")}
         # Mapa 1: acceso caminando a la parada más cercana
-        walk, info = access.walk_access(day)
+        stops = gtfs.stops_served(day)
+        walk, info = access.walk_access(day, stops=stops)
         walk = walk.to_crs(4326)
         w = walk["walk_m"].to_numpy()
         edges = [200, 400, 800, access.MAX_M]
         klass = np.digitize(w, edges, right=True)  # 0..3 = tramos; 4 = más de 2 km / sin conexión
         pct = [round(float((klass == k).mean() * 100), 1) for k in range(5)]
         grid, n_cells, n_filled = _grid(walk)
-        stops = gtfs.stops_served(day)
         days[day] = {
             "label": label,
             "routes": {
@@ -194,7 +201,7 @@ def build_data() -> dict:
             f"{label}: {len(density):,} puntos de rutas, {len(walk):,} puntos de acceso, "
             f"{n_cells:,} celdas ({n_filled:,} estimadas)"
         )
-    grid = {"dlon": DLON, "dlat": DLAT}
+    grid = {"dlon": DLON, "dlat": DLAT, "fill_min": FILL_MIN_NEIGHBORS}
     blocks = {"lon0": BLOCK_LON0, "lat0": BLOCK_LAT0, "deg": BLOCK_DEG}
     return {"sets": list(route_sets), "grid": grid, "blocks": blocks, "days": days}
 
