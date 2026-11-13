@@ -6,7 +6,7 @@ Dos objetivos:
 - **Especialistas y analistas (prioridad):** análisis reproducibles para diseño y optimización de rutas, con mapas de calor de intensidad de tránsito por calle y de abordajes por paradero.
 - **Cualquier persona:** una experiencia visual, interactiva y divertida, no solo "otro mapa de rutas" (por definir).
 
-> Estado: estructura inicial; trabajo **privado** hasta aclarar las condiciones de uso de los datos. Aún no hay mapa; ver `docs/DECISIONS.md` para lo pendiente.
+> Estado: hay un visor local (`viewer`, ver abajo) con acceso a paradas, rutas por calle y frecuencia estimada por parada; trabajo **privado** hasta aclarar las condiciones de uso de los datos. Estado completo en `docs/ADDENDUM_2026-11-13.md`; pendientes en `docs/DECISIONS.md`.
 
 ## Estructura
 
@@ -26,6 +26,9 @@ Requiere [uv](https://docs.astral.sh/uv/).
 ```bash
 uv sync
 PYTHONPATH=pipeline uv run python -m va_y_ven.download   # descarga el GTFS a data/raw/
+PYTHONPATH=pipeline uv run python -m va_y_ven.streets    # red peatonal de OSM (una vez)
+PYTHONPATH=pipeline uv run python -m va_y_ven.viewer     # genera data/processed/mapa.html (~30 s)
+open data/processed/mapa.html
 ```
 
 ## Datos

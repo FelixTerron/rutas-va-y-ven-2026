@@ -100,8 +100,9 @@ Se decidió que no hace falta pasarlo a privado por ahora. Lo que importa es que
 `geopandas`, `osmnx` y `matplotlib` (29 paquetes en total, ver `uv.lock`). En `pyproject.toml`: `exclude-newer = "2026-11-03T00:00:00Z"` (ignora versiones publicadas después; se sube a mano al actualizar) y `no-build = true` (solo wheels ya compiladas, nunca se ejecuta código de construcción). Efecto visible: `ruff` bajó de 0.17.4 a 0.17.3 por ser la 0.17.4 posterior a la fecha de corte.
 
 ## Abiertas
-- **Acceso ponderado por población (INEGI):** pasar de "% de calle" a "% de personas" a ≤400/800 m de una parada, con Censo (AGEB/manzana) y/o DENUE (empleo). Es lo que realmente mide "zonas que carecen de transporte".
-- **Acceso con calidad de servicio:** contar solo paradas con frecuencia mínima (p. ej. ≥N salidas por hora en hora pico) y tomar en cuenta el sentido de la ruta.
+- **Soporte táctil (celular y tableta) — no olvidar:** el visor depende del cursor (hover) para parada, celda y calle; en pantallas táctiles no se ve ningún detalle. Añadir toque y revisar tamaños de botones y ventanas. Importa al publicar.
+- **Acceso ponderado por población (INEGI), siguiente paso:** prueba pequeña con descarga manual a `data/raw/inegi/` (manzanas del Marco Geoestadístico + «Principales resultados por AGEB y manzana urbana», Censo 2020, Yucatán); ver `docs/ADDENDUM_2026-11-13.md`. Meta: pasar de "% de calle" a "% de personas" a ≤400/800 m de una parada, con Censo (AGEB/manzana) y/o DENUE (empleo). Es lo que realmente mide "zonas que carecen de transporte".
+- **Acceso con calidad de servicio:** *descartado como umbral* (2026-11-12): el usuario decidió que el visor no califica el servicio; se reemplazó por la frecuencia estimada informativa de cada parada (7-9 h). Sigue abierto tomar en cuenta el sentido de la ruta.
 - **Nombres de calle:** ya existe la red de OSM (`merida_walk.graphml`); falta unir nombres a los puntos para que un analista lea "Calle 60: 28 rutas, a 120 m de una parada".
 - **Mapa 2 de oferta:** frecuencia (salidas por hora) por tramo, complemento natural del conteo de rutas.
 - **Conciliar cifras de rutas:** 174 `route_id`, 117 rutas base (112 en día hábil) vs. 205 de un estudio de 2025.
