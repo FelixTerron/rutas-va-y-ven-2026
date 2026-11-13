@@ -34,7 +34,10 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
   `no-build`. Al actualizar, subir esa fecha a mano.
 - Comandos (todos con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`): `download` (GTFS), `streets` (red
   peatonal de OSM, una vez), `coverage` y `access` `[weekday|saturday|sunday]`, y `viewer` (genera
-  `data/processed/mapa.html`, ~45 s; `open data/processed/mapa.html` para verlo).
+  `data/processed/mapa.html`, ~30 s; `open data/processed/mapa.html` para verlo).
+- Visor: toda función nueva se describe en la ventana «? Cómo usar» (`viewer_template.html`, `<dialog id="help">`) y
+  sus límites en «Consideraciones». Decisión del usuario: el visor informa, **no califica** el servicio (sin umbrales
+  de «frecuente»/«bueno»/«malo»).
 - Visor: MapLibre 5.24.0 incrustado y verificado por huella; sin `file://` + URLs `blob:` (ver `docs/DECISIONS.md`).
 - Alcance: solo Mérida y zona conurbada (`gtfs.shapes(area="merida")`); Valladolid y Tizimín quedan fuera.
 

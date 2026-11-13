@@ -38,9 +38,12 @@
   #hover .n small { font-size:12px; font-weight:400; color:var(--muted); }
   #hover .list { margin-top:4px; word-break:break-word; color:var(--text); }
   .note { margin-top:10px; font-size:11px; color:var(--muted); }
-  #infobtn { width:100%; margin-top:12px; padding:7px 8px; background:transparent; color:var(--accent); cursor:pointer;
+  .linkbtn { width:100%; margin-top:8px; padding:7px 8px; background:transparent; color:var(--accent); cursor:pointer;
     border:1px solid var(--line); border-radius:8px; font:inherit; font-size:13px; }
-  #infobtn:hover { border-color:var(--accent); }
+  .linkbtn:hover { border-color:var(--accent); }
+  .btnrow { display:flex; gap:8px; margin-top:12px; }
+  .btnrow .linkbtn { margin-top:0; flex:1; font-size:12px; padding:7px 4px; white-space:nowrap; }
+  .muted { color:var(--muted); }
   dialog { max-width:640px; width:calc(100vw - 32px); max-height:calc(100vh - 48px); padding:0; color:var(--text);
     background:#1c2027; border:1px solid var(--line); border-radius:12px; }
   dialog::backdrop { background:#000a; }
@@ -81,11 +84,62 @@
   </section>
 
   <div id="stats"></div>
-  <button id="infobtn" type="button">ⓘ Consideraciones para el análisis</button>
+  <div class="btnrow">
+    <button id="helpbtn" class="linkbtn" type="button" title="Cómo usar este mapa">? Cómo usar</button>
+    <button id="infobtn" class="linkbtn" type="button" title="Consideraciones para el análisis">ⓘ Consideraciones</button>
+  </div>
   <div id="hover">Pasa el cursor sobre una calle o una parada.</div>
   <div class="note">Datos: GTFS de la ATY. Mapa base: OpenFreeMap © OpenMapTiles, datos de OpenStreetMap.</div>
 </aside>
 <script>/*__MAPLIBRE_JS__*/</script>
+<dialog id="help">
+  <button class="close" type="button" id="helpclose">Cerrar</button>
+  <div class="body">
+    <h2>Cómo usar este mapa</h2>
+    <p>Muestra el servicio programado de Va y Ven en Mérida y su zona conurbada. Hay dos mapas y se
+      mueve como cualquier mapa en línea: arrastra para desplazarte y usa la rueda, los botones + y − o doble clic para acercarte.</p>
+
+    <h3>1. Elige el mapa y el día</h3>
+    <ul>
+      <li><b>Acceso a paradas</b> (el de inicio): colorea cada calle según cuánto hay que <b>caminar</b> hasta la parada más
+        cercana. Del turquesa (menos de 200 m) al rojo (más de 2 km o sin conexión).</li>
+      <li><b>Rutas por calle</b>: colorea cada calle según cuántas rutas distintas pasan por ella. Muestra dónde se concentra
+        el transporte y dónde casi no hay.</li>
+      <li><b>Día hábil, Sábado o Domingo</b>: cambia todo (calles, paradas, rutas y salidas) al servicio de ese día.</li>
+    </ul>
+
+    <h3>2. Ver cuánto pasa un camión por una parada</h3>
+    <ul>
+      <li>Es en el mapa de <b>Acceso a paradas</b>. Acércate hasta que aparezcan unos <b>círculos blancos con un
+        camión</b>: son las paradas (más o menos cuando la barra de escala de abajo a la derecha marca 300 m o menos).</li>
+      <li>Pasa el cursor sobre uno de esos íconos. El recuadro del panel muestra su <b>nombre</b>, los <b>viajes al día</b>, las
+        <b>salidas entre las <span class="peakwin">7 y 9</span> h con un estimado de cada cuánto pasa un camión</b> (todas las rutas juntas) y las
+        <b>rutas que paran ahí</b> (R26 es la ruta 26).</li>
+      <li>Es solo información: el mapa no dice si el servicio es bueno o malo.</li>
+    </ul>
+
+    <h3>3. Leer los colores del acceso</h3>
+    <ul>
+      <li>La lista del panel tiene una casilla por rango de distancia, con el porcentaje de calle que cae en él. Quita
+        o pon la palomita para <b>ocultar o mostrar</b> ese rango; por ejemplo, deja solo el rojo para ver dónde está lo más lejano.</li>
+      <li>De lejos el mapa es una <b>cuadrícula de 100 m</b>; pasa el cursor para ver la distancia mediana de esa celda y su
+        rango. Al acercarte más (hasta unos 200 m en la barra de escala) la cuadrícula da paso a las <b>calles punto por
+        punto</b>, con su distancia exacta.</li>
+      <li>Las celdas marcadas como <b>estimadas</b> no tienen calles propias y se rellenaron con sus vecinas; no son un dato medido.</li>
+    </ul>
+
+    <h3>4. Rutas por calle</h3>
+    <ul>
+      <li>El deslizador «Considerar calles con al menos N ruta(s)» esconde las calles con menos rutas, para dejar solo los
+        corredores principales.</li>
+      <li>Pasa el cursor sobre una calle para ver cuántas rutas pasan y <b>cuáles son</b>. Esta vista no muestra paradas.</li>
+      <li>Cuenta rutas distintas, no cuántos camiones pasan: no mide frecuencia.</li>
+    </ul>
+
+    <h3>5. Antes de sacar conclusiones</h3>
+    <p>Abre «Consideraciones para el análisis» (botón del panel): explica qué mide cada dato y sus límites.</p>
+  </div>
+</dialog>
 <dialog id="info">
   <button class="close" type="button" id="infoclose">Cerrar</button>
   <div class="body">
@@ -135,6 +189,17 @@
       <li>No distingue sentidos: si una ruta pasa en ambos sentidos por la misma calle cuenta una vez.</li>
     </ul>
 
+    <h3>Frecuencia de las paradas</h3>
+    <ul>
+      <li>Al pasar el cursor sobre una parada se muestra un <b>estimado</b> de cada cuánto sale un camión entre las
+        <span class="peakwin">7 y 9</span> h: las salidas programadas de esa franja, <b>todas las rutas juntas</b>, y el
+        intervalo medio entre ellas. Es solo información: <b>no califica</b> el servicio como bueno o malo.</li>
+      <li>Si por una parada pasan 3 rutas cada 30 min, se lee como una salida cada 10 min, aunque cada ruta
+        vaya a un destino distinto. Es un promedio: las salidas reales pueden llegar juntas o con huecos.</li>
+      <li>Es la franja de la mañana en días hábiles, sábado o domingo según el tipo de día elegido. No dice nada
+        del resto del día, y no es la frecuencia real con la que pasan las unidades.</li>
+    </ul>
+
     <h3>Uso de los datos</h3>
     <ul>
       <li>Las condiciones de uso de los datos de la ATY siguen sin confirmarse: este visor es de uso privado y no está
@@ -153,7 +218,8 @@
 //   days[d].access.dots = {flat:[lon,lat,metros, ...] ordenado por bloque, keys, starts, counts}
 //   blocks = {lon0, lat0, deg}: bloque (bx,by) = floor((lon-lon0)/deg), floor((lat-lat0)/deg); clave = bx*1000+by
 //   (9999 metros = más de 2 km o sin conexión)
-//   days[d].stops = [[lon,lat,nombre,viajes_al_dia,rutas_base], ...]
+//   peak = {start, end}: ventana horaria (h) de la frecuencia estimada de las paradas
+//   days[d].stops = [[lon,lat,nombre,viajes_al_dia,n_rutas_base,viajes_en_ventana,"3,26,100"], ...]
 const DATA = window.__DATA;  // la descomprime el cargador del final de la página
 
 const CLASS_COLORS = ['#2ec4b6', '#9be15d', '#ffd23f', '#ff8c42', '#ff2e63'];
@@ -176,7 +242,7 @@ const map = new maplibregl.Map({
   style: 'https://tiles.openfreemap.org/styles/dark'
 });
 map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'bottom-right');
-map.addControl(new maplibregl.ScaleControl(), 'bottom-left');
+map.addControl(new maplibregl.ScaleControl(), 'bottom-right');  // a la izquierda lo taparía el panel
 
 // Memoria (aprendizajes): cientos de miles de objetos GeoJSON tumbaron la pestaña. Por eso:
 //  - la vista de ciudad es una cuadrícula de ~100 m (~48 mil celdas en vez de 375 mil puntos);
@@ -261,12 +327,29 @@ function updateDots() {
 }
 map.on('moveend', updateDots);
 const stopsData = () => ({ type: 'FeatureCollection', features: DATA.days[day].stops.map(
-  ([lon, lat, name, trips, routes]) => ({ type: 'Feature', properties: { name: cleanName(name), trips, routes },
+  ([lon, lat, name, trips, routes, peak, list]) => ({ type: 'Feature',
+    properties: { name: cleanName(name), trips, routes, peak, list },
     geometry: { type: 'Point', coordinates: [lon / 1e5, lat / 1e5] } })) });
 
 // Los puntos van cada 25 m: a zoom alto el radio crece para que se lean como línea, no punteado.
 const dotRadius = ['interpolate', ['linear'], ['zoom'], 9, 0.7, 13, 2.2, 15, 3.6, 16, 5.5, 17, 9, 18, 15];
+// Ícono de parada: círculo blanco con un camión, dibujado aquí mismo (sin imágenes externas).
+function busStopIcon(px = 48) {
+  const c = document.createElement('canvas');
+  c.width = c.height = px;
+  const g = c.getContext('2d'), k = px / 48, dark = '#14171c';
+  const box = (x, y, w, h, r, fill) => { g.beginPath(); g.roundRect(x * k, y * k, w * k, h * k, r * k); g.fillStyle = fill; g.fill(); };
+  g.beginPath(); g.arc(24 * k, 24 * k, 22 * k, 0, 2 * Math.PI);
+  g.fillStyle = '#ffffff'; g.fill(); g.lineWidth = 2.5 * k; g.strokeStyle = dark; g.stroke();
+  box(12, 11, 24, 24, 4, dark);       // carrocería
+  box(14.5, 14, 19, 9, 2, '#ffffff'); // parabrisas
+  box(14.5, 27, 4, 3.5, 1.5, '#ffffff'); box(29.5, 27, 4, 3.5, 1.5, '#ffffff');  // faros
+  box(14, 34, 5, 5, 1.5, dark); box(29, 34, 5, 5, 1.5, dark);                    // llantas
+  return g.getImageData(0, 0, px, px);
+}
+
 map.on('style.load', () => {
+  map.addImage('bus-stop', busStopIcon(), { pixelRatio: 2 });
   // Las fuentes grandes nacen vacías y se llenan solo para la vista visible (ver ensureSource).
   map.addSource('grid', { type: 'geojson', data: EMPTY });
   map.addSource('dots', { type: 'geojson', data: EMPTY });
@@ -302,9 +385,10 @@ map.on('style.load', () => {
   map.addLayer({ id: 'routes', type: 'circle', source: 'routes', layout: { 'circle-sort-key': ['get', 'n'] }, paint: {
     'circle-color': ['interpolate', ['linear'], ['get', 'n'], ...RAMP.flat()],
     'circle-radius': dotRadius, 'circle-opacity': 0.85 } }, belowNames);
-  map.addLayer({ id: 'stops', type: 'circle', source: 'stops', minzoom: 14, paint: {
-    'circle-color': '#ffffff', 'circle-stroke-color': '#14171c', 'circle-stroke-width': 1,
-    'circle-radius': ['interpolate', ['linear'], ['zoom'], 14, 2.5, 17, 6] } }, belowNames);
+  // Siempre visibles (aunque se encimen entre sí o con calles), pero debajo de los nombres de calles.
+  map.addLayer({ id: 'stops', type: 'symbol', source: 'stops', minzoom: 14, layout: {
+    'icon-image': 'bus-stop', 'icon-allow-overlap': true, 'icon-ignore-placement': true,
+    'icon-size': ['interpolate', ['linear'], ['zoom'], 14, 0.7, 16, 1, 18, 1.3] } }, belowNames);
   applyMode(); applyClassFilter(); showStats();
 });
 
@@ -315,7 +399,9 @@ function applyMode() {
   map.setLayoutProperty('routes', 'visibility', a ? 'none' : 'visible');
   document.getElementById('sec-access').classList.toggle('hidden', !a);
   document.getElementById('sec-routes').classList.toggle('hidden', a);
-  document.getElementById('hover').textContent = 'Pasa el cursor sobre una calle' + (a ? ' o una parada.' : '.');
+  document.getElementById('hover').textContent = a
+    ? 'Pasa el cursor sobre una calle. Al acercarte aparecen las paradas (círculos blancos con un camión): sobre una verás sus rutas y cada cuánto sale un camión.'
+    : 'Pasa el cursor sobre una calle para ver cuántas rutas pasan y cuáles son.';
   releaseSource(a ? 'routes' : 'grid');
   ensureSource(viewSource());
   updateDots();  // en la vista de rutas se descargan los puntos de acceso
@@ -328,6 +414,7 @@ function applyClassFilter() {
   map.setFilter('grid', f); map.setFilter('dots', f);
 }
 
+const pct = v => v.toFixed(1);  // 16.1 + 8.3 da 24.400000000000002 en JavaScript
 function showStats() {
   const d = DATA.days[day], a = d.access.stats, r = d.routes.stats;
   document.getElementById('classrows').innerHTML = CLASS_LABELS.map((label, k) =>
@@ -343,11 +430,12 @@ function showStats() {
     `De lejos se ve una cuadrícula de 100 m con la mediana de sus calles; al acercarse (zoom 15) y las paradas (zoom 14), ` +
     `las calles punto por punto.`;
   document.getElementById('fillmin').textContent = DATA.grid.fill_min;
+  for (const el of document.querySelectorAll('.peakwin')) el.textContent = `${DATA.peak.start} y ${DATA.peak.end}`;
   document.getElementById('filledn').textContent = Object.values(DATA.days).map(x =>
     `${x.label}: ${x.access.stats.filled.toLocaleString('es-MX')} de ${x.access.stats.cells.toLocaleString('es-MX')} celdas`).join('; ');
   document.getElementById('stats').innerHTML = mode === 'access'
-    ? `<b>${a.pct[0] + a.pct[1]}%</b> de la calle está a ≤ 400 m caminando de una parada · ` +
-      `<b>${a.pct[3] + a.pct[4]}%</b> a más de 800 m`
+    ? `<b>${pct(a.pct[0] + a.pct[1])}%</b> de la calle está a ≤ 400 m caminando de una parada · ` +
+      `<b>${pct(a.pct[3] + a.pct[4])}%</b> a más de 800 m`
     : `<b>${r.routes}</b> rutas base operan · <b>${r.km.toLocaleString('es-MX')}</b> km de calle con servicio<br>` +
       `Máximo <b>${r.max}</b> rutas · mediana <b>${r.median}</b> · <b>${r.single_pct}%</b> de la calle tiene una sola ruta`;
 }
@@ -376,16 +464,26 @@ min.oninput = () => { minv.textContent = min.value;
   map.setFilter('routes', ['>=', ['get', 'n'], +min.value]); };
 
 // Ventana de consideraciones para el análisis.
-const info = document.getElementById('info');
+const info = document.getElementById('info'), help = document.getElementById('help');
 document.getElementById('infobtn').onclick = () => info.showModal();
-document.getElementById('infoclose').onclick = () => info.close();
-info.onclick = e => { if (e.target === info) info.close(); };  // clic fuera = cerrar
+document.getElementById('helpbtn').onclick = () => help.showModal();
+for (const d of [info, help]) {
+  d.querySelector('.close').onclick = () => d.close();
+  d.onclick = e => { if (e.target === d) d.close(); };  // clic fuera = cerrar
+}
 
 // Hover: la parada o el punto de calle más cercano al cursor.
 const hover = document.getElementById('hover');
 const nearest = (feats, e) => feats.reduce((best, f) => {
   const p = map.project(f.geometry.coordinates), d = (p.x - e.point.x) ** 2 + (p.y - e.point.y) ** 2;
   return !best || d < best.d ? { f, d } : best; }, null)?.f;
+// Estimado de cada cuánto pasa un camión (todas las rutas juntas) en la ventana de DATA.peak; solo informa.
+function peakText(n) {
+  const { start, end } = DATA.peak, win = `${start} a ${end} h`, mins = (end - start) * 60;
+  if (!n) return `Sin salidas de ${win}.`;
+  const every = mins / n;
+  return `${n} salida${n > 1 ? 's' : ''} de ${win}` + (n > 1 ? ` (≈ una cada ${Math.round(every)} min)` : '') + '.';
+}
 const WALK_M_PER_MIN = 5000 / 60;  // 5 km/h
 const meters = v => (v >= 9999 ? 'más de 2 km' : `${v} m`);
 map.on('mousemove', e => {
@@ -393,7 +491,7 @@ map.on('mousemove', e => {
   const around = r => [[e.point.x - r, e.point.y - r], [e.point.x + r, e.point.y + r]];
   const q = (layer, r) => map.queryRenderedFeatures(around(r), { layers: [layer] });
   const zoom = map.getZoom(), inDots = zoom >= 15.2;
-  const stop = mode === 'access' && zoom >= 14 ? nearest(q('stops', 7), e) : null;
+  const stop = mode === 'access' && zoom >= 14 ? nearest(q('stops', 12), e) : null;
   let f = stop;
   if (!f) f = mode === 'routes' ? nearest(q('routes', 7), e)
     : inDots ? nearest(q('dots', 7), e) : map.queryRenderedFeatures(e.point, { layers: ['grid'] })[0];
@@ -402,7 +500,8 @@ map.on('mousemove', e => {
   const p = f.properties;
   if (stop) {
     hover.innerHTML = `<div class="n">Parada</div><div class="list"><b>${escapeHtml(p.name)}</b><br>` +
-      `${p.trips} viajes al día · ${p.routes} ruta(s) base</div>`;
+      `${p.trips} viajes al día<br>${peakText(p.peak)}<br>` +
+      `<span class="muted">Rutas que paran (${p.routes}):</span> ${escapeHtml(p.list.split(',').map(r => 'R' + r).join('  '))}</div>`;
   } else if (mode === 'access' && inDots) {
     hover.innerHTML = `<div class="n">${meters(p.d)} <small>caminando a la parada más cercana</small></div>` +
       `<div class="list">≈ ${p.d >= 9999 ? '—' : Math.round(p.d / WALK_M_PER_MIN)} min a 5 km/h</div>`;

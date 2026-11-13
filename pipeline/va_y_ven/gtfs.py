@@ -29,6 +29,9 @@ MERIDA_CENTER_LONLAT = (-89.6237, 20.9674)  # Plaza Grande
 # a >140 km. 60 km separa ambos grupos con amplio margen (verificado el 2026-11-11, feed v11.7).
 MERIDA_RADIUS_KM = 60
 
+# Ventana para estimar cada cuánto pasa un camión por una parada: [7:00, 9:00).
+PEAK_START_H, PEAK_END_H = 7, 9
+
 # Tipo de día -> columna de calendar.txt que debe valer 1.
 DAY_TYPES = {"weekday": "wednesday", "saturday": "saturday", "sunday": "sunday"}
 
@@ -78,28 +81,62 @@ def shape_routes(
     return pairs.merge(routes(gtfs_dir)[["route_id", "base_route"]], on="route_id")
 
 
+def sorted_routes(base_routes: pd.Series) -> str:
+    """Rutas base distintas en orden numérico, con coma: '3,26,100' (las no numéricas, al final)."""
+
+    def key(route: str) -> tuple[bool, int, str]:
+        return (not route.isdigit(), int(route) if route.isdigit() else 0, route)
+
+    return ",".join(sorted(base_routes.unique(), key=key))
+
+
+def peak_trip_counts(
+    served: pd.DataFrame, start_h: int = PEAK_START_H, end_h: int = PEAK_END_H
+) -> pd.Series:
+    """Viajes distintos por parada (índice ``stop_id``) con salida entre ``start_h`` y ``end_h`` h.
+
+    ``served``: columnas trip_id, stop_id y departure_time ("HH:MM:SS"; el GTFS permite horas >= 24,
+    que quedan fuera de la ventana). Suma todas las rutas que paran ahí. El GTFS también permite
+    dejar la hora vacía en paradas intermedias: esas filas no se cuentan (la parada puede salir
+    subcontada).
+    """
+    served = served.dropna(subset=["departure_time"])
+    hour = served["departure_time"].str.split(":", n=1).str[0].astype(int)
+    in_window = served[(hour >= start_h) & (hour < end_h)]
+    return in_window.groupby("stop_id")["trip_id"].nunique()
+
+
 def stops_served(
     day_type: str = "weekday", gtfs_dir: Path = GTFS_DIR, area: str = "merida"
 ) -> gpd.GeoDataFrame:
     """Paradas con al menos un viaje en el tipo de día (EPSG:4326).
 
     Columnas: stop_id, stop_name, trips (viajes que paran ahí en el día), base_routes (rutas base
-    distintas que paran ahí). ``area="merida"`` descarta paradas a más de ``MERIDA_RADIUS_KM``.
+    distintas que paran ahí), route_list (esas rutas, p. ej. "3,26,100") y peak_trips (viajes con
+    salida entre ``PEAK_START_H`` y ``PEAK_END_H`` h, todas las rutas juntas).
+    ``area="merida"`` descarta paradas a más de ``MERIDA_RADIUS_KM``.
     """
     trips = pd.read_csv(
         gtfs_dir / "trips.txt", dtype=str, usecols=["trip_id", "route_id", "service_id"]
     )
     trips = trips[trips["service_id"].isin(service_ids(day_type, gtfs_dir))]
     trips = trips.merge(routes(gtfs_dir)[["route_id", "base_route"]], on="route_id")
-    stop_times = pd.read_csv(gtfs_dir / "stop_times.txt", dtype=str, usecols=["trip_id", "stop_id"])
+    stop_times = pd.read_csv(
+        gtfs_dir / "stop_times.txt", dtype=str, usecols=["trip_id", "stop_id", "departure_time"]
+    )
     served = stop_times.merge(trips[["trip_id", "base_route"]], on="trip_id")
     per_stop = served.groupby("stop_id").agg(
-        trips=("trip_id", "nunique"), base_routes=("base_route", "nunique")
+        trips=("trip_id", "nunique"),
+        base_routes=("base_route", "nunique"),
+        route_list=("base_route", sorted_routes),
     )
     stops = pd.read_csv(gtfs_dir / "stops.txt", dtype={"stop_id": str})
     stops = stops.merge(per_stop, left_on="stop_id", right_index=True)
+    peak = peak_trip_counts(served).rename("peak_trips")
+    stops = stops.merge(peak, left_on="stop_id", right_index=True, how="left")
+    stops["peak_trips"] = stops["peak_trips"].fillna(0).astype(int)
     gdf = gpd.GeoDataFrame(
-        stops[["stop_id", "stop_name", "trips", "base_routes"]],
+        stops[["stop_id", "stop_name", "trips", "base_routes", "peak_trips", "route_list"]],
         geometry=gpd.points_from_xy(stops["stop_lon"], stops["stop_lat"]),
         crs=4326,
     )

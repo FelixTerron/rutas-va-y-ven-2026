@@ -188,12 +188,13 @@ def build_data() -> dict:
                     "filled": n_filled,
                 },
             },
-            # [lon*1e5, lat*1e5, nombre, viajes al día, rutas base que paran]
+            # [lon*1e5, lat*1e5, nombre, viajes al día, rutas base que paran, viajes de 7 a 9 h,
+            #  rutas base que paran ("3,26,100")]
             "stops": [
-                [round(p.x * 1e5), round(p.y * 1e5), n, int(t), int(r)]
-                for p, n, t, r in zip(
+                [round(p.x * 1e5), round(p.y * 1e5), n, int(t), int(r), int(k), rl]
+                for p, n, t, r, k, rl in zip(
                     stops.geometry, stops["stop_name"], stops["trips"], stops["base_routes"],
-                    strict=True,
+                    stops["peak_trips"], stops["route_list"], strict=True,
                 )
             ],
         }
@@ -203,7 +204,8 @@ def build_data() -> dict:
         )
     grid = {"dlon": DLON, "dlat": DLAT, "fill_min": FILL_MIN_NEIGHBORS}
     blocks = {"lon0": BLOCK_LON0, "lat0": BLOCK_LAT0, "deg": BLOCK_DEG}
-    return {"sets": list(route_sets), "grid": grid, "blocks": blocks, "days": days}
+    peak = {"start": gtfs.PEAK_START_H, "end": gtfs.PEAK_END_H}
+    return {"sets": list(route_sets), "grid": grid, "blocks": blocks, "peak": peak, "days": days}
 
 
 def build(out: Path | None = None) -> Path:

@@ -6,11 +6,15 @@ Uso (desde la raíz del repo):  PYTHONPATH=pipeline uv run python pipeline/tests
 
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 import geopandas as gpd
 import numpy as np
+import pandas as pd
 from shapely.geometry import LineString, Point
 
-from va_y_ven import access, viewer
+from va_y_ven import access, gtfs, viewer
 
 UNREACHED = access.UNREACHED_M
 
@@ -85,6 +89,56 @@ def test_walk_uses_shortest_of_parallel_ways():
         access.walk_edges = original
     on_2_3 = walk[walk.geometry.x > 110]
     assert on_2_3["walk_m"].min() <= 125, on_2_3["walk_m"].min()  # con el bug salía ~236
+
+
+def test_peak_trips_count_distinct_trips_in_window_across_routes():
+    rows = [  # (viaje, parada, salida)
+        ("a", "1", "06:59:59"),  # antes de la ventana
+        ("b", "1", "07:00:00"),  # entra (el inicio cuenta)
+        ("c", "1", "08:59:59"),  # entra
+        ("d", "1", "09:00:00"),  # fuera (el fin no cuenta)
+        ("e", "1", "25:10:00"),  # hora >= 24 del GTFS: fuera
+        ("b", "1", "07:30:00"),  # mismo viaje pasa dos veces por la parada: cuenta una vez
+        ("x", "2", "07:15:00"),  # otra parada con otra ruta
+    ]
+    served = pd.DataFrame(rows, columns=["trip_id", "stop_id", "departure_time"])
+    counts = gtfs.peak_trip_counts(served)
+    assert counts["1"] == 2 and counts["2"] == 1
+    assert "3" not in counts.index  # sin salidas en la ventana no aparece (stops_served pone 0)
+
+
+def test_sorted_routes_are_distinct_and_in_numeric_order():
+    routes = pd.Series(["26", "3", "100", "26", "7B", "3"])
+    assert gtfs.sorted_routes(routes) == "3,26,100,7B"  # no "100,26,3": se ordena como número
+
+
+def test_peak_trips_ignore_blank_departure_times():
+    served = pd.DataFrame(
+        {"trip_id": ["a", "b"], "stop_id": ["1", "1"], "departure_time": [np.nan, "07:10:00"]}
+    )
+    assert gtfs.peak_trip_counts(served).to_dict() == {"1": 1}  # antes: ValueError
+
+
+def test_stops_served_keeps_stops_without_peak_departures_and_lists_routes():
+    """GTFS de juguete: la parada 1 tiene 2 salidas en la franja, la 2 ninguna (debe quedar con 0,
+    no desaparecer) y la 3 tiene una hora vacía. El viaje ``tx`` es de otro servicio y no cuenta."""
+    files = {
+        "calendar.txt": "service_id,wednesday\nS,1\nX,0\n",
+        "routes.txt": "route_id,route_short_name\n3,R3\n26A,R26.1\n100,R100\n",
+        "trips.txt": "trip_id,route_id,service_id\nt1,3,S\nt2,26A,S\nt3,100,S\ntx,100,X\n",
+        "stops.txt": "stop_id,stop_name,stop_lat,stop_lon\n1,Uno,20.97,-89.62\n2,Dos,20.97,-89.62\n"
+        "3,Tres,20.97,-89.62\n",
+        "stop_times.txt": "trip_id,stop_id,departure_time\nt1,1,07:10:00\nt2,1,08:05:00\n"
+        "t3,1,10:00:00\ntx,1,07:20:00\nt1,2,10:30:00\nt2,3,\nt3,3,07:30:00\n",
+    }
+    with tempfile.TemporaryDirectory() as tmp:
+        for name, text in files.items():
+            (Path(tmp) / name).write_text(text, encoding="utf-8")
+        got = gtfs.stops_served("weekday", gtfs_dir=Path(tmp), area="all").set_index("stop_id")
+    assert list(got.index) == ["1", "2", "3"]  # la 2 no desaparece
+    assert got["peak_trips"].to_dict() == {"1": 2, "2": 0, "3": 1}
+    assert got["trips"].to_dict() == {"1": 3, "2": 1, "3": 2}  # tx (otro servicio) no cuenta
+    assert got.loc["1", "route_list"] == "3,26,100"  # orden numérico, variantes unidas
 
 
 if __name__ == "__main__":
