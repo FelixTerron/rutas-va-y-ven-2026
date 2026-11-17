@@ -26,6 +26,22 @@
 | Licencia | ODbL © colaboradores de OpenStreetMap: atribuir; si se publican derivados, compartirlos bajo la misma licencia |
 | Vigencia | Es una foto de esa fecha; si cambia la red vial o se mapean cruces nuevos, hay que volver a descargar |
 
+## Población: INEGI, Censo de Población y Vivienda 2020 (por manzana)
+
+Descargados el 2026-11-13 (directo con `curl`, sin pasar por el navegador). Públicos; **no se versionan** (`data/raw/` ignorado).
+
+| Archivo | Qué es | Tamaño | SHA-256 |
+|---|---|---|---|
+| `data/raw/inegi/ageb_mza_urbana_31_cpv2020_csv.zip` | «Principales resultados por AGEB y manzana urbana», Yucatán: 230 columnas, una fila por entidad/municipio/localidad/AGEB/manzana (modificado por INEGI el 2021-07-26) | 6,044,441 B | `5cc69c7a9f0f248e1e19f960b4498a5459d4bedbc1bdc5dd7f98bfac44f99180` |
+| `data/raw/inegi/mg2020_31_yucatan.zip` | Marco Geoestadístico del Censo 2020, Yucatán (shapefiles de manzanas `31m`, localidades, AGEB, municipios; modificado el 2021-01-25) | 50,570,164 B | `c486f642edbae13e51e219374d15f432758d565f86bc83472e6ec2c70b1e8f81` |
+
+- **URLs:** `https://www.inegi.org.mx/contenidos/programas/ccpv/2020/datosabiertos/ageb_manzana/ageb_mza_urbana_31_cpv2020_csv.zip` y `https://www.inegi.org.mx/contenidos/productos/prod_serv/contenidos/espanol/bvinegi/productos/geografia/marcogeo/889463807469/31_yucatan.zip`. Descritos en la [ficha técnica del producto](https://www.inegi.org.mx/contenidos/programas/ccpv/2020/doc/fd_agebmza_urbana_cpv2020.pdf). Hay otro Marco Geoestadístico más reciente (`794551132173`, diciembre de 2024) que **no** se usó: las claves deben coincidir con las del Censo 2020.
+- **Extraídos en** `data/raw/inegi/censo2020_ageb_mza/` y `data/raw/inegi/mg2020/` (de este último se omitió `catalogos/`: un archivo con nombre mal codificado no se puede escribir en macOS).
+- **Unión:** clave de 16 dígitos = ENTIDAD(2) + MUN(3) + LOC(4) + AGEB(4) + MZA(3) en la tabla; `CVEGEO` en el shapefile. Niveles de la tabla: MZA `000` = total de AGEB; AGEB `0000` = total de localidad; LOC `0000` = total de municipio.
+- **CRS del shapefile:** Lambert cónica conforme ITRF2008 de México; hay que reproyectar.
+- **Licencia:** INEGI publica su información bajo sus «Términos de Libre Uso» (copiar, distribuir y adaptar con atribución a INEGI, sin sugerir su respaldo). **Pendiente leer la versión vigente** en https://www.inegi.org.mx/inegi/terminos.html antes de publicar derivados. Atribución sugerida: «Fuente: INEGI, Censo de Población y Vivienda 2020».
+- **Límites:** el Censo es de 2020 (seis años de antigüedad); solo manzanas urbanas tienen cifras; en columnas distintas de la población total hay valores reservados por confidencialidad (`*`) y `N/D`.
+
 ## Demanda / abordajes por parada (para el mapa de calor de pasajeros)
 
 **Estado (2026-11-10):** no se encontró ningún dato público de validaciones, ascensos por parada ni afluencia desglosada. Solo hay cifras sueltas en prensa (p. ej. la ATY reporta ~10 % menos afluencia en vacaciones escolares; filas largas en rutas como la 28 y la 74). El GTFS no incluye demanda.

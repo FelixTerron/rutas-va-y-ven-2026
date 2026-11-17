@@ -45,6 +45,6 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 Hecho: descarga del GTFS (`download.py`), lectura (`gtfs.py`), rutas distintas por calle (`coverage.py`), acceso
 caminando a la parada más cercana con la red de OSM (`streets.py`, `access.py`), visor HTML local (`viewer.py`) con
 paradas, rutas y frecuencia estimada (7-9 h) por parada, guía y consideraciones, y 10 pruebas. Siguiente: prueba
-pequeña de INEGI (población por manzana; descarga manual a `data/raw/inegi/`), luego **soporte táctil del visor (no
-olvidar)**, conciliar 174/117/205 rutas, nombres de calle. Elemento distintivo para el público casual sin decidir.
+de INEGI ya descargada y verificada en `data/raw/inegi/` (falta el cálculo de acceso ponderado por población), luego
+**soporte táctil del visor (no olvidar)**, conciliar 174/117/205 rutas, nombres de calle. Elemento distintivo para el público casual sin decidir.
 Estado completo en `docs/ADDENDUM_2026-11-13.md`; decisiones en `docs/DECISIONS.md`.
