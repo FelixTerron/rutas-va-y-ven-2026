@@ -40,6 +40,7 @@ Descargados el 2026-11-13 (directo con `curl`, sin pasar por el navegador). Púb
 - **Unión:** clave de 16 dígitos = ENTIDAD(2) + MUN(3) + LOC(4) + AGEB(4) + MZA(3) en la tabla; `CVEGEO` en el shapefile. Niveles de la tabla: MZA `000` = total de AGEB; AGEB `0000` = total de localidad; LOC `0000` = total de municipio.
 - **CRS del shapefile:** Lambert cónica conforme ITRF2008 de México; hay que reproyectar.
 - **Licencia:** INEGI publica su información bajo sus «Términos de Libre Uso» (copiar, distribuir y adaptar con atribución a INEGI, sin sugerir su respaldo). **Pendiente leer la versión vigente** en https://www.inegi.org.mx/inegi/terminos.html antes de publicar derivados. Atribución sugerida: «Fuente: INEGI, Censo de Población y Vivienda 2020».
+- **Uso en el proyecto:** `pipeline/va_y_ven/population.py` (población por distancia a una parada); el visor muestra solo porcentajes agregados y la atribución «población: INEGI, Censo de Población y Vivienda 2020» en el pie.
 - **Límites:** el Censo es de 2020 (seis años de antigüedad); solo manzanas urbanas tienen cifras; en columnas distintas de la población total hay valores reservados por confidencialidad (`*`) y `N/D`.
 
 ## Demanda / abordajes por parada (para el mapa de calor de pasajeros)

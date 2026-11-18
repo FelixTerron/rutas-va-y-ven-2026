@@ -33,7 +33,7 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 - Dependencias de Python: no usar `uv add` sin revisar; `pyproject.toml` fija `exclude-newer` (espera de ~7 días) y
   `no-build`. Al actualizar, subir esa fecha a mano.
 - Comandos (todos con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`): `download` (GTFS), `streets` (red
-  peatonal de OSM, una vez), `coverage` y `access` `[weekday|saturday|sunday]`, y `viewer` (genera
+  peatonal de OSM, una vez), `coverage`, `access` y `population` `[weekday|saturday|sunday]`, y `viewer` (genera
   `data/processed/mapa.html`, ~30 s; `open data/processed/mapa.html` para verlo).
 - Visor: toda función nueva se describe en la ventana «? Cómo usar» (`viewer_template.html`, `<dialog id="help">`) y
   sus límites en «Consideraciones». Decisión del usuario: el visor informa, **no califica** el servicio (sin umbrales
@@ -44,7 +44,7 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 ## Estado
 Hecho: descarga del GTFS (`download.py`), lectura (`gtfs.py`), rutas distintas por calle (`coverage.py`), acceso
 caminando a la parada más cercana con la red de OSM (`streets.py`, `access.py`), visor HTML local (`viewer.py`) con
-paradas, rutas y frecuencia estimada (7-9 h) por parada, guía y consideraciones, y 10 pruebas. Siguiente: prueba
-de INEGI ya descargada y verificada en `data/raw/inegi/` (falta el cálculo de acceso ponderado por población), luego
-**soporte táctil del visor (no olvidar)**, conciliar 174/117/205 rutas, nombres de calle. Elemento distintivo para el público casual sin decidir.
+paradas, rutas y frecuencia estimada (7-9 h) por parada, guía y consideraciones, acceso ponderado por población
+(INEGI, `population.py`: 72.8 % de las personas a ≤400 m, rango 58-85 %; el visor **requiere** `data/raw/inegi/`) y 13
+pruebas. Siguiente: **soporte táctil del visor (no olvidar)**, conciliar 174/117/205 rutas, nombres de calle. Elemento distintivo para el público casual sin decidir.
 Estado completo en `docs/ADDENDUM_2026-11-13.md`; decisiones en `docs/DECISIONS.md`.

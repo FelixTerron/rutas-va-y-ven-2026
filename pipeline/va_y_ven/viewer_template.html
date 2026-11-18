@@ -28,10 +28,17 @@
   .row input { accent-color:var(--accent); margin:0; }
   .row i { width:14px; height:14px; border-radius:4px; flex:none; }
   .row span { flex:1; }
-  .row b { font-variant-numeric:tabular-nums; }
+  .row b { font-variant-numeric:tabular-nums; min-width:42px; text-align:right; }
+  .row b.pob { color:var(--accent); }
+  .colhead { display:flex; justify-content:flex-end; gap:8px; font-size:11px; color:var(--muted); margin:0 0 2px; }
+  .colhead span { min-width:42px; text-align:right; }
+  .colhead .pob { color:var(--accent); }
   .bar { height:5px; border-radius:3px; margin:0 0 3px 38px; opacity:.85; }
-  #stats { margin:12px 0 0; padding:10px 0 0; border-top:1px solid var(--line); font-size:12px; color:var(--muted); }
+  #stats { margin:4px 0; font-size:13px; line-height:1.6; }
   #stats b { color:var(--text); }
+  #stats b.pob { color:var(--accent); }
+  #headline { margin-top:10px; font-size:12px; color:var(--muted); }
+  #headline b { color:var(--accent); }
   #hover { margin-top:12px; padding:10px 12px; background:#0003; border:1px solid var(--line);
     border-radius:8px; min-height:58px; font-size:12px; color:var(--muted); }
   #hover .n { font-size:22px; font-weight:700; color:var(--accent); line-height:1; }
@@ -70,9 +77,9 @@
   <div class="seg" id="days" role="group" aria-label="Tipo de día"></div>
 
   <section id="sec-access">
-    <label style="margin-bottom:6px">Caminando por calles hasta la parada más cercana (clic para ocultar/mostrar):</label>
+    <label style="margin-bottom:6px">Caminando hasta la parada más cercana:</label>
+    <div class="colhead"><span>Calle</span><span class="pob">Personas</span></div>
     <div id="classrows"></div>
-    <div class="note" id="accessnote"></div>
   </section>
 
   <section id="sec-routes" class="hidden">
@@ -83,13 +90,13 @@
     <div class="note">Cada punto es un tramo de ~10 m de calle, coloreado por cuántas rutas distintas pasan. No mide frecuencia.</div>
   </section>
 
-  <div id="stats"></div>
+  <div id="headline"></div>
   <div class="btnrow">
     <button id="helpbtn" class="linkbtn" type="button" title="Cómo usar este mapa">? Cómo usar</button>
     <button id="infobtn" class="linkbtn" type="button" title="Consideraciones para el análisis">ⓘ Consideraciones</button>
   </div>
   <div id="hover">Pasa el cursor sobre una calle o una parada.</div>
-  <div class="note">Datos: GTFS de la ATY. Mapa base: OpenFreeMap © OpenMapTiles, datos de OpenStreetMap.</div>
+  <div class="note">Datos: ATY (GTFS) e INEGI (Censo 2020). Mapa base: OpenFreeMap y OpenStreetMap.</div>
 </aside>
 <script>/*__MAPLIBRE_JS__*/</script>
 <dialog id="help">
@@ -120,7 +127,9 @@
 
     <h3>3. Leer los colores del acceso</h3>
     <ul>
-      <li>La lista del panel tiene una casilla por rango de distancia, con el porcentaje de calle que cae en él. Quita
+      <li>Cada rango tiene dos porcentajes: <b>Calle</b> (de la longitud de calle) y <b>Personas</b> (de los habitantes del
+        Censo 2020 de INEGI). Las cifras resumen (por ejemplo, las personas a ≤ 400 m con su <b>rango</b> entre paréntesis) están en una línea del panel y, completas, al principio de
+        «ⓘ Consideraciones». La lista del panel tiene una casilla por rango de distancia; quita
         o pon la palomita para <b>ocultar o mostrar</b> ese rango; por ejemplo, deja solo el rojo para ver dónde está lo más lejano.</li>
       <li>De lejos el mapa es una <b>cuadrícula de 100 m</b>; pasa el cursor para ver la distancia mediana de esa celda y su
         rango. Al acercarte más (hasta unos 200 m en la barra de escala) la cuadrícula da paso a las <b>calles punto por
@@ -146,6 +155,10 @@
     <h2>Consideraciones para el análisis</h2>
     <p>Este visor es una herramienta exploratoria. Antes de sacar conclusiones, conviene tener presente lo siguiente.</p>
 
+    <h3>Cifras del mapa y del día que estás viendo</h3>
+    <div id="stats"></div>
+    <p class="muted" id="accessnote"></p>
+
     <h3>Qué datos son</h3>
     <ul>
       <li><b>Servicio programado, no real.</b> Viene del GTFS de la ATY (horarios y trazos publicados). No refleja retrasos,
@@ -161,12 +174,28 @@
       <li>Es la distancia <b>caminando por la red peatonal de OpenStreetMap</b> hasta la parada más cercana con servicio ese
         día. Si OSM tiene calles faltantes, cruces mal conectados o barreras (vías del tren, avenidas sin cruce), la
         distancia puede salir mayor a la real.</li>
-      <li><b>Los porcentajes son de longitud de calle, no de personas.</b> Una calle sin casas cuenta igual que una
-        densa. Para hablar de población atendida falta ponderar con datos de INEGI.</li>
+      <li>La columna <b>Calle</b> es el porcentaje de longitud de calle: una calle sin casas cuenta igual que una
+        densa. La columna <b>Personas</b> pondera con el Censo (ver «Población»).</li>
       <li>Solo cuenta la <b>cercanía</b>. No considera frecuencia, hora, sentido de la ruta (la parada puede servir
         solo al lado contrario), destino ni transbordos. Una parada con 14 viajes al día cuenta igual que una con 200.</li>
       <li>Los minutos se calculan a 5 km/h. No se toman en cuenta banquetas, seguridad, calor ni pendiente.</li>
       <li>«Más de 2 km o sin conexión» junta calles lejanas y calles desconectadas de la red.</li>
+    </ul>
+
+    <h3>Población (columna «Personas»)</h3>
+    <ul>
+      <li>Viene del <b>Censo de Población y Vivienda 2020</b> de INEGI (habitantes por manzana urbana). Tiene seis años:
+        la ciudad ha crecido. Cuenta dónde <b>vive</b> la gente, no dónde trabaja, estudia o compra.</li>
+      <li><b>La zona:</b> manzanas urbanas dentro del área de la red peatonal (paradas con servicio y ~2 km alrededor). Incluye
+        pueblos de esa zona que no tienen servicio cercano (cuentan como «más de 2 km»); la población rural no entra porque
+        no tiene cifras por manzana. Por eso los porcentajes dependen de dónde se trace la zona.</li>
+      <li><b>No hay una única forma correcta de asignar la distancia.</b> La cifra central da a cada manzana la distancia de la
+        calle más cercana a su centro. El <b>rango</b> entre paréntesis sale de repetir el cálculo suponiendo que la gente
+        sale por la <b>mejor</b> o por la <b>peor</b> calle del borde de su manzana: la cifra central no es «la» respuesta.</li>
+      <li>Quedan fuera las manzanas sin calle cercana en OpenStreetMap pero con una parada cerca:
+        <span id="nostreet">unas pocas personas</span>. Además, en todo el estado 166 manzanas del Censo (1,220 personas,
+        0.06 %) no tienen polígono en el Marco Geoestadístico y no se pueden ubicar.</li>
+      <li>Es la distancia a la parada, no si hay lugar, ni cada cuánto pasa un camión.</li>
     </ul>
 
     <h3>Cuadrícula de 100 m</h3>
@@ -223,8 +252,9 @@
 const DATA = window.__DATA;  // la descomprime el cargador del final de la página
 
 const CLASS_COLORS = ['#2ec4b6', '#9be15d', '#ffd23f', '#ff8c42', '#ff2e63'];
-const CLASS_LABELS = ['Hasta 200 m (≈ 2.5 min)', '201 a 400 m (≈ 5 min)', '401 a 800 m (≈ 10 min)',
-  '801 m a 2 km', 'Más de 2 km o sin conexión'];
+const CLASS_LABELS = ['Hasta 200 m', '201 a 400 m', '401 a 800 m', '801 m a 2 km', 'Más de 2 km o sin conexión'];
+const CLASS_TIPS = ['≈ 2.5 min caminando a 5 km/h', '≈ 5 min', '≈ 10 min', 'más de 10 min',
+  'más de 2 km caminando, o calles sin conexión a la red'];
 const RAMP = [[1,'#5b8def'],[2,'#2ec4b6'],[4,'#9be15d'],[8,'#ffd23f'],[14,'#ff8c42'],[20,'#ff2e63']];
 document.getElementById('legend').style.background =
   'linear-gradient(90deg,' + RAMP.map(([, c]) => c).join(',') + ')';
@@ -418,24 +448,31 @@ const pct = v => v.toFixed(1);  // 16.1 + 8.3 da 24.400000000000002 en JavaScrip
 function showStats() {
   const d = DATA.days[day], a = d.access.stats, r = d.routes.stats;
   document.getElementById('classrows').innerHTML = CLASS_LABELS.map((label, k) =>
-    `<label class="row"><input type="checkbox" data-c="${k}" ${activeClasses.has(k) ? 'checked' : ''}>` +
-    `<i style="background:${CLASS_COLORS[k]}"></i><span>${label}</span><b>${a.pct[k]}%</b></label>` +
+    `<label class="row" title="${CLASS_TIPS[k]}"><input type="checkbox" data-c="${k}" ${activeClasses.has(k) ? 'checked' : ''}>` +
+    `<i style="background:${CLASS_COLORS[k]}"></i><span>${label}</span><b>${a.pct[k]}%</b>` +
+    `<b class="pob">${a.people.pct[k]}%</b></label>` +
     `<div class="bar" style="width:${Math.max(1, a.pct[k]) * 0.85}%;background:${CLASS_COLORS[k]}"></div>`).join('');
   for (const cb of document.querySelectorAll('#classrows input')) cb.onchange = () => {
     cb.checked ? activeClasses.add(+cb.dataset.c) : activeClasses.delete(+cb.dataset.c);
     applyClassFilter(); };
-  document.getElementById('accessnote').textContent =
-    `Porcentajes sobre la red peatonal de OpenStreetMap (${a.km.toLocaleString('es-MX')} km a ≤ 2.5 km de una parada), ` +
-    `no sobre la población: una calle sin casas cuenta igual. Paradas con servicio: ${a.stops.toLocaleString('es-MX')}. ` +
-    `De lejos se ve una cuadrícula de 100 m con la mediana de sus calles; al acercarse (zoom 15) y las paradas (zoom 14), ` +
-    `las calles punto por punto.`;
+  document.getElementById('accessnote').textContent = mode !== 'access' ? '' :
+    `Calle: % de la red peatonal de OpenStreetMap (${a.km.toLocaleString('es-MX')} km). Personas: % de los ` +
+    `${a.people.total.toLocaleString('es-MX')} habitantes de ${a.people.blocks.toLocaleString('es-MX')} manzanas urbanas ` +
+    `(Censo 2020, INEGI; ver «Población» más abajo). Paradas con servicio: ${a.stops.toLocaleString('es-MX')}.`;
+  document.getElementById('nostreet').textContent =
+    `${a.people.no_street.toLocaleString('es-MX')} personas (${pct(a.people.no_street / a.people.total * 100)} %)`;
   document.getElementById('fillmin').textContent = DATA.grid.fill_min;
   for (const el of document.querySelectorAll('.peakwin')) el.textContent = `${DATA.peak.start} y ${DATA.peak.end}`;
   document.getElementById('filledn').textContent = Object.values(DATA.days).map(x =>
     `${x.label}: ${x.access.stats.filled.toLocaleString('es-MX')} de ${x.access.stats.cells.toLocaleString('es-MX')} celdas`).join('; ');
+  document.getElementById('headline').innerHTML = mode === 'access'
+    ? `<b>${pct(a.people.le400)}%</b> de las personas a ≤ 400 m de una parada (entre ${a.people.le400_range.join(' y ')} %)`
+    : `<b>${r.routes}</b> rutas base · <b>${r.single_pct}%</b> de la calle con una sola ruta`;
   document.getElementById('stats').innerHTML = mode === 'access'
     ? `<b>${pct(a.pct[0] + a.pct[1])}%</b> de la calle está a ≤ 400 m caminando de una parada · ` +
-      `<b>${pct(a.pct[3] + a.pct[4])}%</b> a más de 800 m`
+      `<b>${pct(a.pct[3] + a.pct[4])}%</b> a más de 800 m<br>` +
+      `<b class="pob">${pct(a.people.le400)}%</b> de las personas, a ≤ 400 m (entre ${a.people.le400_range.join(' y ')} %) · ` +
+      `<b class="pob">${pct(a.people.gt800)}%</b> a más de 800 m (entre ${a.people.gt800_range.join(' y ')} %)`
     : `<b>${r.routes}</b> rutas base operan · <b>${r.km.toLocaleString('es-MX')}</b> km de calle con servicio<br>` +
       `Máximo <b>${r.max}</b> rutas · mediana <b>${r.median}</b> · <b>${r.single_pct}%</b> de la calle tiene una sola ruta`;
 }

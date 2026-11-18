@@ -27,7 +27,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from va_y_ven import access, coverage, gtfs
+from va_y_ven import access, coverage, gtfs, population
 
 # Serie 5 a propósito: la 6.x es solo ESM en varios módulos y no cabe en un HTML único.
 # 5.24.0 (2026-04-23). La 5.24.1 (2026-11-11) endurece la sanitización de atribuciones de fuentes
@@ -159,10 +159,11 @@ def build_data() -> dict:
         # Mapa 1: acceso caminando a la parada más cercana
         stops = gtfs.stops_served(day)
         walk, info = access.walk_access(day, stops=stops)
+        people = population.population_by_class(walk, stops.to_crs(access.CRS_METERS))
         walk = walk.to_crs(4326)
         w = walk["walk_m"].to_numpy()
-        edges = [200, 400, 800, access.MAX_M]
-        klass = np.digitize(w, edges, right=True)  # 0..3 = tramos; 4 = más de 2 km / sin conexión
+        # 0..3 = tramos; 4 = más de 2 km / sin conexión
+        klass = np.digitize(w, population.EDGES, right=True)
         pct = [round(float((klass == k).mean() * 100), 1) for k in range(5)]
         grid, n_cells, n_filled = _grid(walk)
         days[day] = {
@@ -186,6 +187,7 @@ def build_data() -> dict:
                     "stops": info["stops"],
                     "cells": n_cells,
                     "filled": n_filled,
+                    "people": people,  # % de la población (INEGI, Censo 2020), ver population.py
                 },
             },
             # [lon*1e5, lat*1e5, nombre, viajes al día, rutas base que paran, viajes de 7 a 9 h,

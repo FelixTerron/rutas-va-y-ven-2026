@@ -12,9 +12,9 @@ from pathlib import Path
 import geopandas as gpd
 import numpy as np
 import pandas as pd
-from shapely.geometry import LineString, Point
+from shapely.geometry import LineString, Point, box
 
-from va_y_ven import access, gtfs, viewer
+from va_y_ven import access, gtfs, population, viewer
 
 UNREACHED = access.UNREACHED_M
 
@@ -139,6 +139,63 @@ def test_stops_served_keeps_stops_without_peak_departures_and_lists_routes():
     assert got["peak_trips"].to_dict() == {"1": 2, "2": 0, "3": 1}
     assert got["trips"].to_dict() == {"1": 3, "2": 1, "3": 2}  # tx (otro servicio) no cuenta
     assert got.loc["1", "route_list"] == "3,26,100"  # orden numérico, variantes unidas
+
+
+def _street_points(rows: list[tuple[float, float, int]]) -> gpd.GeoDataFrame:
+    """Puntos de calle de juguete (x, y, metros caminando) en metros."""
+    return gpd.GeoDataFrame(
+        {"walk_m": [w for _, _, w in rows]},
+        geometry=[Point(x, y) for x, y, _ in rows],
+        crs=access.CRS_METERS,
+    )
+
+
+def test_population_classes_cover_street_far_and_no_street_cases():
+    points = _street_points([(10, 0, 150), (3000, 0, 9999)])
+    stops = np.array([Point(0, 0)], dtype=object)
+    centroids = np.array(
+        [Point(20, 0), Point(3010, 0), Point(500, 400), Point(6000, 6000)], dtype=object
+    )
+    klass, no_street, on_street = population.assign_classes(centroids, points, stops)
+    assert klass.tolist()[:2] == [0, 4]  # 150 m caminando; sin conexión (9999)
+    assert on_street.tolist() == [True, True, False, False]
+    # sin calle cerca: la 3.ª está a ~640 m de una parada (se reporta aparte); la 4.ª a >2.5 km
+    # de toda parada, así que caminando serían >2 km (clase 4) y no queda "sin calle".
+    assert no_street.tolist() == [False, False, True, False]
+    assert klass[3] == 4
+
+
+def test_edge_walk_gives_best_and_worst_street_around_a_block():
+    block = box(0, 0, 50, 50)
+    points = _street_points([(-10, 25, 100), (60, 25, 500), (500, 500, 70)])  # el 3.º está lejos
+    blocks = np.array([block, box(900, 900, 950, 950)], dtype=object)
+    low, high = population.edge_walk(blocks, points)
+    assert (low[0], high[0]) == (100, 500)
+    assert np.isnan(low[1]) and np.isnan(high[1])  # una manzana sin calles en el borde
+
+
+def test_population_by_class_weights_by_people_and_excludes_blocks_without_street():
+    # 3 manzanas: 100 personas junto a una calle a 100 m, 300 junto a una a 900 m (la otra calle
+    # de su borde está a 100 m) y 50 sin calle cerca pero con parada cerca (fuera de los %).
+    points = _street_points([(0, 0, 100), (200, 0, 900), (230, 0, 100)])
+    stops = gpd.GeoDataFrame(geometry=[Point(0, 0)], crs=access.CRS_METERS)
+    fake = gpd.GeoDataFrame(
+        {"pob": [100, 300, 50], "MUN": ["050"] * 3},
+        geometry=[box(-20, -20, 20, 20), box(190, -20, 215, 20), box(0, 1200, 20, 1220)],
+        crs=access.CRS_METERS,
+    )
+    original = population.blocks
+    population.blocks = lambda: fake
+    try:
+        r = population.population_by_class(points, stops)
+    finally:
+        population.blocks = original
+    assert r["no_street"] == 50 and r["total"] == 450
+    # cifra central: 100 -> clase 0 (100 m); 300 -> su centroide (202.5, 0) cae junto a (200, 0):
+    # 900 m = clase 3. ≤400 m: 100 / 400 = 25 %; >800 m: 300 / 400 = 75 %
+    assert r["le400"] == 25.0 and r["gt800"] == 75.0
+    # con la mejor calle del borde (100 m) las 300 pasan a ≤200 m; con la peor (900 m) se quedan
+    assert r["le400_range"] == [25, 100] and r["gt800_range"] == [0, 75]
 
 
 if __name__ == "__main__":
