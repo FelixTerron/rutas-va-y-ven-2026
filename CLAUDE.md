@@ -19,7 +19,8 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 
 ## Convenciones
 - Python ≥ 3.11 gestionado con `uv`; lint con `ruff` (`uv run ruff check pipeline`); pruebas con
-  `PYTHONPATH=pipeline uv run python pipeline/tests/test_pipeline.py` (sin dependencias nuevas).
+  `PYTHONPATH=pipeline uv run python pipeline/tests/test_pipeline.py` (sin dependencias nuevas). Prueba de humo del visor
+  (después de `viewer`; Node vía `fnm`, usa el Chrome instalado, sin paquetes): `node pipeline/tests/viewer_smoke.mjs`.
 - Código del pipeline en `pipeline/va_y_ven/`. Ejecutar con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`.
 - Web: TypeScript + Vite + MapLibre GL JS en `web/` (pendiente de crear). Node 24.22.2 vía `fnm` (`.node-version`),
   pnpm 12.17.0 vía Corepack. Usar siempre **pnpm** (no npm). Antes de ejecutar: `eval "$(fnm env --shell bash)" && fnm use`.

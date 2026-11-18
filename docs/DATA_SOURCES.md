@@ -11,8 +11,13 @@
 | Contenido | 174 rutas, 3,252 paradas, 50,535 viajes, ~74 mil puntos de `shapes`, ~1.59 M de `stop_times`, tarifas |
 | Descarga | `data/raw/` (ignorado por git); `manifest.json` guarda fecha, tamaño y SHA-256 |
 
+### Quién publica el feed (verificado el 2026-11-18)
+- **Indicios de que es de la ATY:** `feed_info.txt` y `agency.txt` nombran como publicador y contacto a la ATY (transporteyucatan.org.mx); la página de inicio de la ATY tiene un recuadro «GTFS — Descargar» (su enlace `/gtfs` respondió 404 a `curl`; no se pudo ver a dónde lleva); el catálogo de Mobility Database lo registra como «Official Feed» (issue #1692, abierto por la cuenta `mobilitydataio`, no por la ATY).
+- **Quién lo aloja:** `transit-scheduler.com` («Plataforma Institucional GTFS», código abierto, autor Juan Monroy Andrade, repo `transit-scheduler-backend`), un servicio **de terceros**; el feed se regenera a diario (hay un export del 2026-11-18; el nuestro es del 2026-11-06). No consta por escrito que la ATY lo haya contratado ni autorizado su uso por terceros.
+- No se revisaron los términos de `transit-scheduler.com`.
+
 ### Pendientes
-- [ ] **Licencia / términos de uso.** No se encontró licencia en el feed ni en el issue. Confirmar con la ATY antes de redistribuir el GTFS o datos derivados.
+- [ ] **Licencia / términos de uso.** No se encontró licencia en el feed (GTFS no tiene campo de licencia), ni en el issue, ni en la página de la ATY, ni en la plataforma. Confirmar con la ATY **por escrito** antes de publicar el mapa o redistribuir el GTFS o datos derivados. Ver `docs/DECISIONS.md` (riesgos de publicar sin licencia).
 - [ ] **Cobertura.** El feed trae 174 `route_id`; un estudio de 2025 menciona 205 rutas. Medir si son variantes o rutas faltantes.
 - [ ] **Estabilidad de la URL.** Es un servicio de terceros; registrar versión del feed en cada descarga.
 
@@ -39,7 +44,7 @@ Descargados el 2026-11-13 (directo con `curl`, sin pasar por el navegador). Púb
 - **Extraídos en** `data/raw/inegi/censo2020_ageb_mza/` y `data/raw/inegi/mg2020/` (de este último se omitió `catalogos/`: un archivo con nombre mal codificado no se puede escribir en macOS).
 - **Unión:** clave de 16 dígitos = ENTIDAD(2) + MUN(3) + LOC(4) + AGEB(4) + MZA(3) en la tabla; `CVEGEO` en el shapefile. Niveles de la tabla: MZA `000` = total de AGEB; AGEB `0000` = total de localidad; LOC `0000` = total de municipio.
 - **CRS del shapefile:** Lambert cónica conforme ITRF2008 de México; hay que reproyectar.
-- **Licencia:** INEGI publica su información bajo sus «Términos de Libre Uso» (copiar, distribuir y adaptar con atribución a INEGI, sin sugerir su respaldo). **Pendiente leer la versión vigente** en https://www.inegi.org.mx/inegi/terminos.html antes de publicar derivados. Atribución sugerida: «Fuente: INEGI, Censo de Población y Vivienda 2020».
+- **Licencia (leída el 2026-11-18):** «Términos de Libre Uso de la Información del INEGI», https://www.inegi.org.mx/contenidos/inegi/doc/terminos_info.pdf (sha256 `8900206b…925d62`; el documento no trae fecha ni versión y INEGI «se reserva el derecho a modificarlos en cualquier momento»: releer antes de publicar). Permite copiar y distribuir (sin alterar ni suprimir los metadatos), difundir, adaptar, reordenar, extraer y **explotar comercialmente** la información como insumo de otros productos. Obligaciones: (f) dar crédito al INEGI como autor con la forma «Fuente: INEGI, nombre del producto, fecha de actualización»; (g) avisar al usuario final de cualquier análisis o transformación y no presentarlo como hecho por el INEGI; (h) no aparentar postura oficial ni aval, integración, patrocinio o apoyo del INEGI. El INEGI no responde por la interpretación de los resultados. Los términos del sitio (`terminos_sitio.pdf`, sha256 `4496431c…ab63359`) solo regulan el uso de inegi.org.mx. Cumplimiento: el pie del visor dice «Fuente: INEGI, Censo de Población y Vivienda 2020»; la sección «Población» de las consideraciones cita también el Marco Geoestadístico 2020 y aclara que el análisis es propio y no del INEGI. No se redistribuyen los archivos originales (`data/raw/` no se versiona).
 - **Uso en el proyecto:** `pipeline/va_y_ven/population.py` (población por distancia a una parada); el visor muestra solo porcentajes agregados y la atribución «población: INEGI, Censo de Población y Vivienda 2020» en el pie.
 - **Límites:** el Censo es de 2020 (seis años de antigüedad); solo manzanas urbanas tienen cifras; en columnas distintas de la población total hay valores reservados por confidencialidad (`*`) y `N/D`.
 

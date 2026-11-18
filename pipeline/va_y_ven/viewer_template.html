@@ -96,7 +96,7 @@
     <button id="infobtn" class="linkbtn" type="button" title="Consideraciones para el análisis">ⓘ Consideraciones</button>
   </div>
   <div id="hover">Pasa el cursor sobre una calle o una parada.</div>
-  <div class="note">Datos: ATY (GTFS) e INEGI (Censo 2020). Mapa base: OpenFreeMap y OpenStreetMap.</div>
+  <div class="note">Fuente: INEGI, Censo de Población y Vivienda 2020; ATY (GTFS). Mapa: OpenFreeMap, OpenStreetMap.</div>
 </aside>
 <script>/*__MAPLIBRE_JS__*/</script>
 <dialog id="help">
@@ -184,8 +184,10 @@
 
     <h3>Población (columna «Personas»)</h3>
     <ul>
-      <li>Viene del <b>Censo de Población y Vivienda 2020</b> de INEGI (habitantes por manzana urbana). Tiene seis años:
-        la ciudad ha crecido. Cuenta dónde <b>vive</b> la gente, no dónde trabaja, estudia o compra.</li>
+      <li>Fuente: INEGI, Censo de Población y Vivienda 2020 (habitantes por manzana urbana) y INEGI, Marco Geoestadístico
+        2020 (polígonos de las manzanas). <b>Los porcentajes, los rangos y la asignación a calles son un análisis propio de
+        este proyecto, no cifras del INEGI, y el INEGI no los avala.</b></li>
+      <li>El Censo tiene seis años: la ciudad ha crecido. Cuenta dónde <b>vive</b> la gente, no dónde trabaja, estudia o compra.</li>
       <li><b>La zona:</b> manzanas urbanas dentro del área de la red peatonal (paradas con servicio y ~2 km alrededor). Incluye
         pueblos de esa zona que no tienen servicio cercano (cuentan como «más de 2 km»); la población rural no entra porque
         no tiene cifras por manzana. Por eso los porcentajes dependen de dónde se trace la zona.</li>
