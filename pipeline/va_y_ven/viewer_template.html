@@ -13,7 +13,18 @@
   #map { position:absolute; inset:0; }
   #panel { position:absolute; top:12px; left:12px; width:310px; max-width:calc(100vw - 24px);
     background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:14px 16px;
-    backdrop-filter:blur(6px); max-height:calc(100% - 24px); overflow:auto; }
+    backdrop-filter:blur(6px); max-height:calc(100% - 72px); overflow:auto; }
+  #credits { position:absolute; left:12px; bottom:12px; max-width:calc(100vw - 470px); padding:3px 8px; font-size:10px;
+    line-height:1.35; color:var(--text); background:#14171ccc; border-radius:6px; opacity:.7; text-shadow:0 0 3px #000; transition:opacity .15s; }
+  #credits:hover { opacity:1; }  /* tenue para no recargar el mapa; se lee completo al pasar el cursor */
+  #notice { position:absolute; top:12px; right:12px; width:300px; padding:12px 34px 12px 14px; font-size:12px; line-height:1.45;
+    background:var(--panel); border:1px solid var(--accent); border-radius:12px; backdrop-filter:blur(6px); }
+  #notice b { color:var(--text); }
+  #notice .x { position:absolute; top:4px; right:6px; width:26px; height:26px; background:transparent; color:var(--muted);
+    border:0; border-radius:6px; font:inherit; font-size:18px; line-height:1; cursor:pointer; }
+  #notice .x:hover { color:var(--text); background:#fff1; }
+  #notice .more { margin-top:6px; padding:0; background:none; border:0; color:var(--accent); font:inherit; cursor:pointer;
+    text-decoration:underline; }
   h1 { font-size:16px; margin:0 0 2px; }
   .sub { color:var(--muted); font-size:12px; margin:0 0 12px; }
   .seg { display:flex; gap:4px; margin-bottom:10px; }
@@ -62,14 +73,15 @@
   dialog .close { float:right; margin:12px 12px 0 0; padding:4px 10px; background:transparent; color:var(--text);
     border:1px solid var(--line); border-radius:8px; cursor:pointer; font:inherit; }
   .hidden { display:none; }
-  @media (max-width:600px) { #panel { width:auto; right:12px; } }
+  @media (max-width:600px) { #panel { width:auto; right:12px; } #credits { right:12px; max-width:none; bottom:34px; }
+    #notice { top:auto; bottom:92px; left:12px; right:12px; width:auto; } }
 </style>
 </head>
 <body>
 <div id="map"></div>
 <aside id="panel">
   <h1>Va y Ven: acceso y rutas</h1>
-  <p class="sub">Servicio programado según el GTFS de la ATY. Mérida y zona conurbada.</p>
+  <p class="sub">Proyecto comunitario e independiente, no afiliado a la ATY ni a gobiernos o partidos.</p>
   <div class="seg" id="modes" role="group" aria-label="Mapa">
     <button data-mode="access" aria-pressed="true">Acceso a paradas</button>
     <button data-mode="routes" aria-pressed="false">Rutas por calle</button>
@@ -96,8 +108,15 @@
     <button id="infobtn" class="linkbtn" type="button" title="Consideraciones para el análisis">ⓘ Consideraciones</button>
   </div>
   <div id="hover">Pasa el cursor sobre una calle o una parada.</div>
-  <div class="note">Fuente: INEGI, Censo de Población y Vivienda 2020; ATY (GTFS). Mapa: OpenFreeMap, OpenStreetMap.</div>
 </aside>
+<aside id="notice" role="note">
+  <button class="x" type="button" id="noticeclose" aria-label="Cerrar aviso">×</button>
+  <b>Proyecto comunitario e independiente.</b> No pertenece ni está afiliado a la ATY, a ningún gobierno ni a ningún partido
+  político, y no es un sitio oficial. Las rutas, paradas y horarios vienen del GTFS que publica la ATY.
+  <button class="more" type="button" id="noticemore">Más información</button>
+</aside>
+<div id="credits">Proyecto comunitario e independiente, no afiliado a la ATY, a ningún gobierno ni a ningún partido político ·
+  Fuente: ATY (GTFS); INEGI, Censo de Población y Vivienda 2020 · Mapa: OpenFreeMap, OpenStreetMap</div>
 <script>/*__MAPLIBRE_JS__*/</script>
 <dialog id="help">
   <button class="close" type="button" id="helpclose">Cerrar</button>
@@ -145,6 +164,9 @@
       <li>Cuenta rutas distintas, no cuántos camiones pasan: no mide frecuencia.</li>
     </ul>
 
+    <p class="muted">Al entrar aparece, arriba a la derecha, un aviso de que el proyecto es independiente; se cierra con la ×
+      y la franja de abajo a la izquierda conserva la misma aclaración.</p>
+
     <h3>5. Antes de sacar conclusiones</h3>
     <p>Abre «Consideraciones para el análisis» (botón del panel): explica qué mide cada dato y sus límites.</p>
   </div>
@@ -154,6 +176,15 @@
   <div class="body">
     <h2>Consideraciones para el análisis</h2>
     <p>Este visor es una herramienta exploratoria. Antes de sacar conclusiones, conviene tener presente lo siguiente.</p>
+
+    <h3>Sobre este proyecto</h3>
+    <p><b>Este portal es un proyecto comunitario e independiente. No pertenece ni está afiliado a la Agencia de Transporte de
+      Yucatán (ATY), a ningún gobierno ni a ningún partido político, y ninguno de ellos lo avala, patrocina ni respalda.</b>
+      No es un sitio oficial ni un servicio de información al usuario del transporte: para rutas y horarios oficiales, consulta a la
+      ATY (transporteyucatan.org.mx).</p>
+    <p>Fuentes: rutas, paradas y horarios del GTFS que publica la ATY; población del INEGI (Censo de Población y Vivienda 2020 y
+      Marco Geoestadístico 2020); calles y mapa base de OpenStreetMap y OpenFreeMap. Los cálculos, los textos y los errores son de este
+      proyecto, no de esas instituciones.</p>
 
     <h3>Cifras del mapa y del día que estás viendo</h3>
     <div id="stats"></div>
@@ -506,6 +537,8 @@ min.oninput = () => { minv.textContent = min.value;
 const info = document.getElementById('info'), help = document.getElementById('help');
 document.getElementById('infobtn').onclick = () => info.showModal();
 document.getElementById('helpbtn').onclick = () => help.showModal();
+document.getElementById('noticemore').onclick = () => info.showModal();
+document.getElementById('noticeclose').onclick = () => document.getElementById('notice').remove();  // sin guardar: reaparece en cada visita
 for (const d of [info, help]) {
   d.querySelector('.close').onclick = () => d.close();
   d.onclick = e => { if (e.target === d) d.close(); };  // clic fuera = cerrar
