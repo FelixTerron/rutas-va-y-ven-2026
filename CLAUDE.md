@@ -1,6 +1,7 @@
 # CLAUDE.md
 
 Mapa interactivo de rutas Va y Ven (Yucatán). Proyecto personal; objetivos y estructura en `README.md`.
+Nombre del portal: **Vanyven** (decisión del 2026-11-24; juego de palabras con «Va y Ven», sin afiliación a la ATY).
 
 ## Regla absoluta: git
 **Nunca ejecutes comandos de escritura de git** (add, commit, push, pull, reset, checkout, stash, etc.), ni
