@@ -47,5 +47,7 @@ Hecho: descarga del GTFS (`download.py`), lectura (`gtfs.py`), rutas distintas p
 caminando a la parada más cercana con la red de OSM (`streets.py`, `access.py`), visor HTML local (`viewer.py`) con
 paradas, rutas y frecuencia estimada (7-9 h) por parada, guía y consideraciones, acceso ponderado por población
 (INEGI, `population.py`: 72.8 % de las personas a ≤400 m, rango 58-85 %; el visor **requiere** `data/raw/inegi/`) y 13
-pruebas. Siguiente: **soporte táctil del visor (no olvidar)**, conciliar 174/117/205 rutas, nombres de calle. Elemento distintivo para el público casual sin decidir.
+pruebas. Ahora: etapa de **solo planeación y diseño** (sin código) de la vista pública (reportes por paradero,
+«wrapped», Descubrir; móvil primero) y de los 4 features de análisis (ver `docs/DECISIONS.md`). Pendientes: soporte
+táctil del visor de análisis (al final, no olvidar), conciliar 174/117/205 rutas, nombres de calle.
 Estado completo en `docs/ADDENDUM_2026-11-13.md`; decisiones en `docs/DECISIONS.md`.
