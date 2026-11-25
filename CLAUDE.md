@@ -23,7 +23,9 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
   `PYTHONPATH=pipeline uv run python pipeline/tests/test_pipeline.py` (sin dependencias nuevas). Prueba de humo del visor
   (después de `viewer`; Node vía `fnm`, usa el Chrome instalado, sin paquetes): `node pipeline/tests/viewer_smoke.mjs`.
 - Código del pipeline en `pipeline/va_y_ven/`. Ejecutar con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`.
-- Web: TypeScript + Vite + MapLibre GL JS en `web/` (pendiente de crear). Node 24.22.2 vía `fnm` (`.node-version`),
+- Web: sitio estático **sin empaquetador** (páginas y módulos JS nativos + MapLibre GL JS verificado por huella) en
+  `web/` (pendiente de crear; decisión 2026-11-25: TypeScript/Vite descartado por ahora; en local, `python -m http.server`).
+  Node 24.22.2 vía `fnm` (`.node-version`),
   pnpm 12.17.0 vía Corepack. Usar siempre **pnpm** (no npm). Antes de ejecutar: `eval "$(fnm env --shell bash)" && fnm use`.
 - Seguridad de dependencias (ataques de cadena de suministro a npm en 2026): no añadir paquetes sin revisarlos y
   sin avisar al usuario; no aprobar scripts de instalación (`allowBuilds`) sin permiso; lockfile versionado;

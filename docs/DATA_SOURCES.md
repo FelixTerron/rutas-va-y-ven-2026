@@ -17,7 +17,7 @@
 - No se revisaron los términos de `transit-scheduler.com`.
 
 ### Pendientes
-- [ ] **Licencia / términos de uso.** No se encontró licencia en el feed (GTFS no tiene campo de licencia), ni en el issue, ni en la página de la ATY, ni en la plataforma. Confirmar con la ATY **por escrito** antes de publicar el mapa o redistribuir el GTFS o datos derivados. Ver `docs/DECISIONS.md` (riesgos de publicar sin licencia).
+- [ ] **Licencia / términos de uso.** No se encontró licencia en el feed (GTFS no tiene campo de licencia), ni en el issue, ni en la página de la ATY, ni en la plataforma. Por decisión del usuario (recordada el 2026-11-25) **no se pedirá permiso a la ATY**: se publicará con atribución y aviso de no afiliación. Ver `docs/DECISIONS.md` (riesgos de publicar sin licencia).
 - [ ] **Cobertura.** El feed trae 174 `route_id`; un estudio de 2025 menciona 205 rutas. Medir si son variantes o rutas faltantes.
 - [ ] **Estabilidad de la URL.** Es un servicio de terceros; registrar versión del feed en cada descarga.
 
