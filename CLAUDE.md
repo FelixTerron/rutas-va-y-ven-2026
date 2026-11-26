@@ -37,8 +37,9 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 - Dependencias de Python: no usar `uv add` sin revisar; `pyproject.toml` fija `exclude-newer` (espera de ~7 días) y
   `no-build`. Al actualizar, subir esa fecha a mano.
 - Comandos (todos con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`): `download` (GTFS), `streets` (red
-  peatonal de OSM, una vez), `coverage`, `access` y `population` `[weekday|saturday|sunday]`, y `viewer` (genera
-  `data/processed/mapa.html`, ~30 s; `open data/processed/mapa.html` para verlo).
+  peatonal de OSM, una vez), `coverage`, `access` y `population` `[weekday|saturday|sunday]`, `viewer` (genera
+  `data/processed/mapa.html`, ~30 s; `open data/processed/mapa.html` para verlo) y `public_data` (archivos ligeros de la
+  vista pública en `data/processed/public/`, ~1 s).
 - Visor: toda función nueva se describe en la ventana «? Cómo usar» (`viewer_template.html`, `<dialog id="help">`) y
   sus límites en «Consideraciones». Decisión del usuario: el visor informa, **no califica** el servicio (sin umbrales
   de «frecuente»/«bueno»/«malo»).
@@ -49,8 +50,10 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 Hecho: descarga del GTFS (`download.py`), lectura (`gtfs.py`), rutas distintas por calle (`coverage.py`), acceso
 caminando a la parada más cercana con la red de OSM (`streets.py`, `access.py`), visor HTML local (`viewer.py`) con
 paradas, rutas y frecuencia estimada (7-9 h) por parada, guía y consideraciones, acceso ponderado por población
-(INEGI, `population.py`: 72.8 % de las personas a ≤400 m, rango 58-85 %; el visor **requiere** `data/raw/inegi/`) y 13
-pruebas. Ahora: etapa de **solo planeación y diseño** (sin código) de la vista pública (reportes por paradero,
-«wrapped», Descubrir; móvil primero) y de los 4 features de análisis (ver `docs/DECISIONS.md`). Pendientes: soporte
-táctil del visor de análisis (al final, no olvidar), conciliar 174/117/205 rutas, nombres de calle.
+(INEGI, `population.py`: 72.8 % de las personas a ≤400 m, rango 58-85 %; el visor **requiere** `data/raw/inegi/`),
+datos ligeros de la vista pública (`public_data.py`: 105 rutas, 205 KB comprimidos en total) y 18 pruebas.
+Ahora: el diseño de la vista pública está cerrado en lo esencial y se construye por fases (hoja de ruta en
+`docs/DECISIONS.md`): hecha la fase 1 (datos); sigue el núcleo compartido (sin empaquetador, móvil primero). Falta
+diseñar los 4 features de análisis. Pendientes: soporte táctil del visor de análisis (al final, no olvidar),
+conciliar 174/117/205 rutas, nombres de calle.
 Estado completo en `docs/ADDENDUM_2026-11-13.md`; decisiones en `docs/DECISIONS.md`.

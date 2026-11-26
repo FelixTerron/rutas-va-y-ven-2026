@@ -14,7 +14,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point, box
 
-from va_y_ven import access, gtfs, population, viewer
+from va_y_ven import access, gtfs, population, public_data, viewer
 
 UNREACHED = access.UNREACHED_M
 
@@ -196,6 +196,54 @@ def test_population_by_class_weights_by_people_and_excludes_blocks_without_stree
     assert r["le400"] == 25.0 and r["gt800"] == 75.0
     # con la mejor calle del borde (100 m) las 300 pasan a ≤200 m; con la peor (900 m) se quedan
     assert r["le400_range"] == [25, 100] and r["gt800_range"] == [0, 75]
+
+
+def test_public_clean_name_strips_only_the_trailing_stop_number():
+    assert public_data.clean_name("Parque Caucel_2050") == "Parque Caucel"
+    assert public_data.clean_name("C-59-G x 110 Col. Dzitya_3390") == "C-59-G x 110 Col. Dzitya"
+    assert public_data.clean_name("Calle 60 x 55") == "Calle 60 x 55"  # sin sufijo: igual
+
+
+def test_public_main_trip_is_the_most_used_shape_of_each_direction():
+    rows = [  # (ruta, sentido, trazo, viaje): en el sentido 0, "B" tiene 2 viajes y "A" 1
+        ("95", "0", "A", "t1"), ("95", "0", "B", "t2"), ("95", "0", "B", "t3"),
+        ("95", "1", "C", "t4"), ("95", "1", "D", "t5"),  # empate: gana el trazo "C" (orden)
+    ]
+    trips = pd.DataFrame(rows, columns=["base_route", "direction_id", "shape_id", "trip_id"])
+    trips["trip_headsign"] = "x"
+    best = public_data.main_trips(trips).set_index("direction_id")
+    assert best.loc["0", "shape_id"] == "B" and best.loc["0", "trip_id"] == "t2"
+    assert best.loc["1", "shape_id"] == "C" and len(best) == 2
+
+
+def test_public_main_trips_rejects_route_names_that_are_not_safe_file_names():
+    trips = pd.DataFrame(
+        [("../../x", "0", "A", "t1", "h")],
+        columns=["base_route", "direction_id", "shape_id", "trip_id", "trip_headsign"],
+    )
+    try:
+        public_data.main_trips(trips)
+    except ValueError:
+        return
+    raise AssertionError("debía rechazar una ruta con nombre no numérico")
+
+
+def test_public_stops_follow_the_trip_order_as_numbers_not_text():
+    st = pd.DataFrame(  # como texto, "10" iría antes que "2"
+        {"trip_id": ["t"] * 3, "stop_id": ["c", "b", "a"], "stop_sequence": ["10", "2", "1"]}
+    )
+    assert public_data.stops_by_trip(st) == {"t": ["a", "b", "c"]}
+
+
+def test_public_simplify_drops_a_1m_wiggle_keeps_ends_and_a_real_bend():
+    x, y, m = -89.62, 20.97, 9e-6  # ~1 m en latitud
+    straight = LineString([(x, y), (x + 0.001, y + m), (x + 0.002, y)])  # el medio se desvía 1 m
+    bent = LineString([(x, y), (x + 0.001, y + 100 * m), (x + 0.002, y)])  # el medio, 100 m
+    lines = gpd.GeoSeries([straight, bent], index=["s", "b"], crs=4326)
+    out = public_data.simplify_lines(lines, tol_m=5)
+    end = round(x + 0.002, 5)  # el trazo sale redondeado a 5 decimales
+    assert out["s"] == [[x, y], [end, y]]
+    assert len(out["b"]) == 3 and out["b"][0] == [x, y] and out["b"][-1] == [end, y]
 
 
 if __name__ == "__main__":
