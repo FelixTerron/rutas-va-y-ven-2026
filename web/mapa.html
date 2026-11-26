@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data: blob: https://tiles.openfreemap.org; connect-src 'self' https://tiles.openfreemap.org; worker-src blob:; base-uri 'none'; form-action 'none'">
+<title>Mapa · Vanyven</title>
+<meta name="description" content="Elige una ruta del Va y Ven de Mérida y mira su recorrido y sus paraderos.">
+<link rel="stylesheet" href="vendor/maplibre-gl.css">
+<link rel="stylesheet" href="css/vanyven.css">
+<script src="vendor/maplibre-gl.js"></script>
+<script type="module" src="js/mapa.js"></script>
+</head>
+<body class="map-page">
+<header class="topbar">
+  <a class="brand" href="./">Vanyven</a>
+  <div class="selector">
+    <span id="swatch" class="swatch" hidden></span>
+    <input id="route-input" type="text" role="combobox" aria-expanded="false" aria-controls="route-list"
+      aria-autocomplete="list" aria-label="Buscar ruta por número o nombre" placeholder="Buscar ruta: número o nombre"
+      autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="search">
+    <button id="route-clear" type="button" aria-label="Quitar la ruta" hidden>×</button>
+    <ul id="route-list" role="listbox" aria-label="Rutas" hidden></ul>
+  </div>
+  <p id="legend" class="legend" hidden></p>
+</header>
+
+<div class="map-wrap">
+  <div id="map" role="application" aria-label="Mapa de rutas"></div>
+  <p id="hint" class="hint">Elige una ruta para ver su recorrido y sus paraderos.</p>
+  <p id="status" class="status" role="status" hidden></p>
+  <aside id="stop-card" class="stop-card" aria-live="polite" hidden>
+    <button id="card-close" class="close" type="button" aria-label="Cerrar la ficha del paradero">×</button>
+    <h2 id="card-name"></h2>
+    <p id="card-id" class="muted"></p>
+    <p id="card-dir"></p>
+    <h3>Rutas que pasan</h3>
+    <ul id="card-routes" class="chips"></ul>
+  </aside>
+</div>
+
+<footer class="credits">
+  <p>Vanyven no pertenece ni está afiliado a la ATY, a ningún gobierno ni a ningún partido político. Rutas y paraderos: ATY (GTFS), solo servicio de día hábil. Mapa: © OpenStreetMap contributors, OpenFreeMap.</p>
+</footer>
+</body>
+</html>

@@ -173,6 +173,32 @@ Responde a «¿qué % de las **personas** (no de la calle) vive cerca de una par
 
 - **Hecho (2026-11-26, fase 1): `pipeline/va_y_ven/public_data.py`** genera `data/processed/public/index.json` y `public/routes/<ruta>.json` según lo decidido. Resultado real: 105 rutas, 210 sentidos, **205 KB comprimidos en total, mediana 1.9 KB y máximo 4.2 KB por ruta**, índice 2.5 KB. Revisado a ojo sobre la ruta 95 en el Centro (esquinas y manzanas cerradas): el trazo de 5 m sigue al original. Ninguna ruta de solo fin de semana salió. Los 6 nombres que aún terminan en `_01` o `_02` (p. ej. «Sambulá_01») son parte del nombre original: solo se quita el número del paradero. 5 pruebas nuevas con datos inventados (18 en total). Esquema de campos y orden de las listas documentados en el módulo. **Revisión ponytail:** el nombre de cada archivo sale del GTFS (dato ajeno), así que se rechazan rutas base no numéricas (con `/` o `..` podría escribirse fuera de la carpeta; hoy las 174 rutas son `R` + número); se quitó el parámetro de tipo de día, que no se usaba y habría pisado los archivos de día hábil; y el orden de los paraderos por número de secuencia (no como texto) tiene su prueba.
 
+### Fase 2: primera web mínima (2026-11-26)
+- **Rebanada vertical, no «núcleo compartido» suelto** (decisión del usuario): inicio + mapa con selector y ficha. Lo compartido de verdad (estilos, créditos, aviso)
+  sale de ahí y lo reutilizará la vista de análisis.
+- **Mapa base claro (`positron`)** (decisión del usuario): se lee mejor al sol y deja ver los colores de las rutas. **Créditos** en una franja fija **debajo del mapa**,
+  fuera de él, para que no se encimen con los controles ni con la atribución de OpenStreetMap.
+- **Rutas que pasan** añadidas a cada paradero (5.º elemento, p. ej. `"3,26,100"`; decisión del usuario): +14 KB, **219 KB comprimidos en total**. Cuenta todas las variantes de la ruta
+  base, no solo el trazo mostrado.
+- **Hallazgo: el destino (`trip_headsign`) es el nombre de la ruta en las 105 rutas, igual en los dos sentidos.** Mostrar «hacia Xmatkuil» en el regreso sería falso. Ya no se guarda:
+  cada sentido va «hacia» su **último paradero** (en el último paradero de un sentido no se anota ese destino). Los nombres de paradero son cruces y referencias (p. ej. «R23 C-71 x 54 y 52 Col. Centro»);
+  si resultan poco claros se puede mostrar solo el nombre de la terminal.
+- **Una ruta a la vez** en el mapa (supuesto mío, sin objeción): los dos sentidos se separan con un pequeño desfase a la derecha del sentido de marcha y llevan flechas.
+  La dirección guarda la ruta (`mapa.html?ruta=10`) para poder compartirla; solo se acepta un número de ruta (dígitos), porque entra en el nombre de un archivo.
+- **Ficha única** (un solo elemento en la página). Tocar una de las «rutas que pasan» elige esa ruta y, si el paradero está en ella, mantiene la ficha. Para tocar con el dedo, cuenta el
+  paradero más cercano a 12 px del toque. Tocar un lugar vacío la cierra.
+- **Aviso de privacidad en el inicio:** solo la primera oración del texto aprobado. La segunda («Las rutas de "Tu trayecto" se quedan en tu navegador») **se añade cuando exista «Tu trayecto»**;
+  hoy aludiría a algo que no existe.
+- **Política de contenido (CSP)** en cada página: el inicio no permite ni scripts ni peticiones externas; el mapa solo scripts propios y datos de sí mismo y de OpenFreeMap. Todo texto de los datos entra con `textContent`,
+  y los colores y números de ruta se validan antes de usarlos (los datos del GTFS son ajenos).
+- **Pruebas:** `node pipeline/tests/web_smoke.mjs` (servidor propio de Node que solo expone `web/` y los datos públicos; Chrome en celular 390×844 con toques y en escritorio 1280×700): búsqueda, ficha única, que nada se salga
+  de la pantalla, errores del navegador y **tope de 150 KB comprimidos para el inicio** (hoy 2.5 KB). El arranque de Chrome quedó en `pipeline/tests/cdp.mjs`, compartido con la prueba del visor.
+- **Servidor local solo en la propia máquina:** `python -m http.server --bind 127.0.0.1` desde la raíz del repo (por defecto escucha en todas las interfaces y serviría `data/raw/` a la red local).
+- **Revisión ponytail (fase 2):** (1) elegir o quitar una ruta **antes de que cargue el mapa base** lanzaba un `TypeError` (las capas aún no existían) y, al quitarla, la ruta reaparecía sola al terminar la carga
+  porque la dirección conservaba `?ruta=`; ahora el selector espera a que el mapa cargue; (2) la prueba tocaba el selector solo con Enter: se añadió tocar una opción con el dedo (el campo pierde el foco y la lista no
+  debe cerrarse antes del toque); (3) foco del selector con contorno visible y Escape en el selector ya no cierra también la ficha. Comprobado: el MapLibre copiado es idéntico byte a byte al paquete verificado.
+- **Pendiente de la fase 3:** votos (con valores de ejemplo en el navegador), pruebas en un celular real, revisar el desempeño del dibujo con rutas largas.
+
 ## Abiertas
 - **Soporte táctil (celular y tableta):** el visor de análisis depende del cursor (hover) para parada, celda y calle; en pantallas táctiles no se ve ningún detalle. Añadir toque y revisar tamaños de botones y ventanas (al final). La **vista pública** nace móvil primero.
 - **Acceso ponderado por población (INEGI):** *hecho el 2026-11-17* (ver decisión); queda por añadir, si se quiere, el desglose por municipio en el visor y la población por celda. Meta original: pasar de "% de calle" a "% de personas" a ≤400/800 m de una parada, con Censo (AGEB/manzana) y/o DENUE (empleo). Es lo que realmente mide "zonas que carecen de transporte".

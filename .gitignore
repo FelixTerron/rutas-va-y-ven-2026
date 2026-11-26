@@ -31,3 +31,6 @@ web/.vite/
 
 # --- Claude Code (config personal local) ---
 .claude/settings.local.json
+
+# MapLibre copiado por va_y_ven.web_vendor (se regenera)
+web/vendor/

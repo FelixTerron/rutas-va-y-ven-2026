@@ -1,0 +1,81 @@
+/* Vanyven: móvil primero. Un solo archivo para las dos páginas. */
+:root {
+  --bg: #f6f5f2; --fg: #1b1f23; --muted: #596168; --card: #ffffff;
+  --accent: #0a6c5b; --line: #d6d3cb; --radius: 14px;
+  color-scheme: light;
+}
+*, *::before, *::after { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0; background: var(--bg); color: var(--fg);
+  font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+.muted { color: var(--muted); }
+
+/* Créditos: siempre visibles, fuera del mapa */
+.credits { padding: 8px 16px; font-size: 12px; line-height: 1.35; color: var(--muted); background: var(--card); border-top: 1px solid var(--line); }
+
+/* Inicio */
+.home { max-width: 560px; margin: 0 auto; padding: 32px 16px 16px; display: grid; gap: 16px; }
+.home h1 { font-size: 2.2rem; letter-spacing: -0.02em; }
+.lead { font-size: 1.1rem; color: var(--muted); }
+.big-link {
+  display: grid; gap: 4px; padding: 20px; border-radius: var(--radius); text-decoration: none;
+  background: var(--accent); color: #fff; min-height: 44px;
+}
+.big-link strong { font-size: 1.3rem; }
+.notice { padding: 14px 16px; border-radius: var(--radius); background: var(--card); border: 1px solid var(--line); }
+.notice h2 { font-size: 1rem; margin-bottom: 4px; }
+.home-page .credits { max-width: 560px; margin: 0 auto; border-top: 0; background: none; }
+
+/* Página del mapa */
+.map-page { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+.topbar { position: relative; z-index: 5; flex: none; padding: 8px 16px 10px; background: var(--card); border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
+.brand { font-weight: 700; color: var(--accent); text-decoration: none; justify-self: start; padding: 2px 0; }
+.legend { font-size: 13px; color: var(--muted); }
+.selector { position: relative; display: flex; align-items: center; background: #fff; border: 1.5px solid #8a9096; border-radius: 12px; }
+.selector:focus-within { border-color: var(--accent); outline: 3px solid var(--accent); outline-offset: 1px; }
+.selector input { flex: 1; min-width: 0; height: 48px; padding: 0 8px 0 12px; border: 0; background: none; font: inherit; color: inherit; border-radius: 12px; }
+.selector input:focus-visible { outline: none; }  /* el borde del contenedor ya marca el foco */
+.swatch { width: 14px; height: 28px; margin-left: 10px; border-radius: 4px; flex: none; }
+.selector button { width: 44px; height: 44px; border: 0; background: none; font-size: 26px; line-height: 1; color: var(--muted); cursor: pointer; }
+#route-list {
+  position: absolute; top: calc(100% + 4px); left: 0; right: 0; margin: 0; padding: 4px; list-style: none;
+  max-height: 55vh; max-height: 50dvh; overflow-y: auto; background: #fff; border: 1px solid var(--line);
+  border-radius: 12px; box-shadow: 0 8px 24px rgb(0 0 0 / .18);
+}
+#route-list li { display: flex; align-items: center; gap: 10px; min-height: 44px; padding: 6px 8px; border-radius: 8px; cursor: pointer; }
+#route-list li[aria-selected="true"], #route-list li:hover { background: #ece9e1; }
+#route-list li.empty { color: var(--muted); cursor: default; }
+#route-list .num { min-width: 52px; padding: 2px 8px; border-radius: 6px; text-align: center; font-weight: 700; flex: none; }
+
+.map-wrap { position: relative; flex: 1; min-height: 0; }
+#map { position: absolute; inset: 0; }
+.hint, .status {
+  position: absolute; z-index: 2; top: 12px; left: 12px; right: 60px; max-width: 420px; padding: 10px 14px;
+  border-radius: 12px; background: var(--card); box-shadow: 0 2px 10px rgb(0 0 0 / .2); font-size: 15px;
+}
+
+/* Ficha del paradero: arriba de la atribución del mapa. En celular MapLibre la abre en 2 líneas (44 px) */
+.stop-card {
+  position: absolute; z-index: 3; left: 8px; right: 8px; bottom: 56px; max-height: 60%; overflow-y: auto;
+  padding: 14px 52px 14px 16px; border-radius: var(--radius); background: var(--card); box-shadow: 0 4px 18px rgb(0 0 0 / .28);
+  display: grid; gap: 6px;
+}
+.stop-card h2 { font-size: 1.1rem; overflow-wrap: anywhere; }
+.stop-card h3 { font-size: .85rem; color: var(--muted); font-weight: 600; margin-top: 4px; }
+.stop-card .close { position: absolute; top: 2px; right: 2px; width: 44px; height: 44px; border: 0; background: none; font-size: 28px; line-height: 1; cursor: pointer; color: var(--muted); }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.chips button { min-width: 48px; min-height: 44px; padding: 0 12px; border: 2px solid transparent; border-radius: 10px; font: inherit; font-weight: 700; cursor: pointer; }
+.chips button[aria-current] { border-color: #111; }
+.chips button:disabled { background: #e6e3db; color: var(--muted); cursor: default; }
+
+@media (min-width: 700px) {
+  .topbar { grid-template-columns: auto minmax(280px, 460px) 1fr; align-items: center; column-gap: 16px; }
+  .legend { justify-self: end; }
+  .stop-card { right: auto; width: 380px; left: 12px; bottom: 36px; }
+}
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }

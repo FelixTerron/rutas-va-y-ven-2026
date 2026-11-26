@@ -3,13 +3,15 @@
 Decisiones (ver ``docs/DECISIONS.md``, «Formatos de datos de la vista pública»): rutas base con
 servicio de día hábil en Mérida (105), ambos sentidos, solo el trazo más usado de cada sentido,
 trazo simplificado a 5 m, coordenadas con 5 decimales y nombres de paradero sin el sufijo
-``_número``.
+``_número``. No se guarda el destino (``trip_headsign``): en los 105 casos es el nombre de la ruta,
+igual en los dos sentidos; cada sentido se describe por su último paradero.
 
 Salida (no se versiona; ``data/processed/`` está ignorado):
 - ``public/index.json``: ``[[ruta, nombre, color], ...]`` en orden numérico.
 - ``public/routes/<ruta>.json``: ``{"route", "name", "color", "directions": [{"direction_id",
-  "headsign", "line", "stops"}]}``. ``line`` es ``[[lon, lat], ...]``; ``stops`` va en el orden del
-  recorrido, cada uno ``[id, lat, lon, nombre]`` (el ``id`` es el número del paradero).
+  "line", "stops"}]}``. ``line`` es ``[[lon, lat], ...]``; ``stops`` va en el orden del
+  recorrido, cada uno ``[id, lat, lon, nombre, rutas]`` (el ``id`` es el número del paradero y
+  ``rutas`` las rutas base de día hábil que paran ahí, p. ej. ``"3,26,100"``).
 
 Uso (desde la raíz del repo):
     PYTHONPATH=pipeline uv run python -m va_y_ven.public_data
@@ -39,7 +41,7 @@ def clean_name(name: str) -> str:
 def main_trips(trips: pd.DataFrame) -> pd.DataFrame:
     """Por (ruta base, sentido): el trazo con más viajes y un viaje que lo usa.
 
-    ``trips``: columnas base_route, direction_id, shape_id, trip_id, trip_headsign. Los empates se
+    ``trips``: columnas base_route, direction_id, shape_id, trip_id. Los empates se
     resuelven por ``shape_id`` y ``trip_id`` para que el resultado sea siempre el mismo.
     """
     if not trips["base_route"].str.fullmatch(r"[0-9]+").all():
@@ -49,7 +51,7 @@ def main_trips(trips: pd.DataFrame) -> pd.DataFrame:
     counts = trips.groupby([*key, "shape_id"]).size().rename("n").reset_index()
     best = counts.sort_values(["n", "shape_id"], ascending=[False, True]).drop_duplicates(key)
     first = trips.sort_values("trip_id").drop_duplicates([*key, "shape_id"])
-    return best.merge(first[[*key, "shape_id", "trip_id", "trip_headsign"]], on=[*key, "shape_id"])
+    return best.merge(first[[*key, "shape_id", "trip_id"]], on=[*key, "shape_id"])
 
 
 def simplify_lines(
@@ -78,7 +80,7 @@ def build() -> Path:
     trips = pd.read_csv(
         g / "trips.txt",
         dtype=str,
-        usecols=["trip_id", "route_id", "service_id", "direction_id", "shape_id", "trip_headsign"],
+        usecols=["trip_id", "route_id", "service_id", "direction_id", "shape_id"],
     )
     trips = trips[trips["service_id"].isin(gtfs.service_ids("weekday"))]
     shapes = gtfs.shapes().set_index("shape_id")
@@ -95,6 +97,8 @@ def build() -> Path:
     stop_times = stop_times[stop_times["trip_id"].isin(best["trip_id"])]
     trip_stops = stops_by_trip(stop_times)
     stops = pd.read_csv(g / "stops.txt", dtype={"stop_id": str}).set_index("stop_id")
+    # Todas las variantes de cada ruta base, no solo el trazo mostrado.
+    routes_at = gtfs.stops_served("weekday", area="all").set_index("stop_id")["route_list"]
 
     # Nombre y color de cada ruta base: los de su variante con más viajes.
     by_route = trips.groupby(["base_route", "route_long_name", "route_color"]).size().rename("n")
@@ -108,7 +112,8 @@ def build() -> Path:
     def stop_row(stop_id: str) -> list:
         s = stops.loc[stop_id]  # KeyError si el GTFS cita un paradero que no existe: falla fuerte
         name = "" if pd.isna(s["stop_name"]) else clean_name(s["stop_name"])
-        return [stop_id, round(s["stop_lat"], DECIMALS), round(s["stop_lon"], DECIMALS), name]
+        lat, lon = round(s["stop_lat"], DECIMALS), round(s["stop_lon"], DECIMALS)
+        return [stop_id, lat, lon, name, routes_at[stop_id]]
 
     routes_dir = OUT_DIR / "routes"
     routes_dir.mkdir(parents=True, exist_ok=True)
@@ -120,7 +125,6 @@ def build() -> Path:
         directions = [
             {
                 "direction_id": r.direction_id,
-                "headsign": r.trip_headsign if isinstance(r.trip_headsign, str) else "",
                 "line": lines[r.shape_id],
                 "stops": [stop_row(s) for s in trip_stops[r.trip_id]],
             }

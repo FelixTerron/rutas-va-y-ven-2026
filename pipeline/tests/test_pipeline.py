@@ -210,7 +210,6 @@ def test_public_main_trip_is_the_most_used_shape_of_each_direction():
         ("95", "1", "C", "t4"), ("95", "1", "D", "t5"),  # empate: gana el trazo "C" (orden)
     ]
     trips = pd.DataFrame(rows, columns=["base_route", "direction_id", "shape_id", "trip_id"])
-    trips["trip_headsign"] = "x"
     best = public_data.main_trips(trips).set_index("direction_id")
     assert best.loc["0", "shape_id"] == "B" and best.loc["0", "trip_id"] == "t2"
     assert best.loc["1", "shape_id"] == "C" and len(best) == 2
@@ -218,8 +217,8 @@ def test_public_main_trip_is_the_most_used_shape_of_each_direction():
 
 def test_public_main_trips_rejects_route_names_that_are_not_safe_file_names():
     trips = pd.DataFrame(
-        [("../../x", "0", "A", "t1", "h")],
-        columns=["base_route", "direction_id", "shape_id", "trip_id", "trip_headsign"],
+        [("../../x", "0", "A", "t1")],
+        columns=["base_route", "direction_id", "shape_id", "trip_id"],
     )
     try:
         public_data.main_trips(trips)

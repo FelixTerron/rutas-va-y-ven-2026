@@ -31,6 +31,15 @@
 | Licencia | ODbL © colaboradores de OpenStreetMap: atribuir; si se publican derivados, compartirlos bajo la misma licencia |
 | Vigencia | Es una foto de esa fecha; si cambia la red vial o se mapean cruces nuevos, hay que volver a descargar |
 
+## Mapa base: OpenFreeMap (teselas) y MapLibre GL JS (registrado el 2026-11-26)
+
+| Campo | Valor |
+|---|---|
+| Teselas y estilos | OpenFreeMap — `https://tiles.openfreemap.org/styles/positron` (vista pública, claro) y `.../dark` (visor de análisis). Datos de OpenStreetMap (ODbL) y OpenMapTiles |
+| Atribución | La del estilo (se muestra en el mapa) y, en el pie de la página, «© OpenStreetMap contributors, OpenFreeMap» |
+| Privacidad | Al abrir la página del mapa, **el navegador pide las teselas directamente a OpenFreeMap**, que recibe la dirección IP de la persona. La página de inicio no hace ninguna petición externa. **Por verificar antes de publicar:** la política de privacidad y los términos de uso de OpenFreeMap, y reflejarlo en el aviso de privacidad si hace falta |
+| MapLibre GL JS | 5.24.0, copiado a `web/vendor/` (ignorado por git) con `va_y_ven.web_vendor`, que rechaza el paquete si su huella SHA-512 no coincide con la fijada |
+
 ## Población: INEGI, Censo de Población y Vivienda 2020 (por manzana)
 
 Descargados el 2026-11-13 (directo con `curl`, sin pasar por el navegador). Públicos; **no se versionan** (`data/raw/` ignorado).
