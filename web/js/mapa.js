@@ -5,7 +5,7 @@ import { createSelector } from './selector.js';
 import { createCard } from './card.js';
 
 const $ = id => document.getElementById(id);
-const hint = $('hint'), legend = $('legend'), statusEl = $('status');
+const hint = $('hint'), statusEl = $('status');
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 const TAP_RADIUS = 12;  // px: el paradero más cercano al toque cuenta, aunque el punto sea pequeño
 const empty = () => ({ type: 'FeatureCollection', features: [] });
@@ -108,13 +108,8 @@ async function main() {
     for (const d of data.directions) {
       lines.push({ type: 'Feature', properties: { color }, geometry: { type: 'LineString', coordinates: d.line } });
       d.line.forEach(p => all.extend(p));
-      // El destino del GTFS es el nombre de la ruta en ambos sentidos: cada sentido va «hacia» su último
-      // paradero. En ese último paradero el camión termina, así que no se anota como destino de ahí.
-      const last = d.stops.at(-1);
       for (const [id, lat, lon, name, routes] of d.stops) {
-        const s = points.get(id) ?? { id, name, lonlat: [lon, lat], routes: routes.split(','), towards: [] };
-        if (id !== last[0] && !s.towards.includes(last[3])) s.towards.push(last[3]);
-        points.set(id, s);
+        if (!points.has(id)) points.set(id, { id, name, lonlat: [lon, lat], routes: routes.split(',') });
       }
     }
     stops = points;
@@ -123,8 +118,6 @@ async function main() {
       type: 'FeatureCollection',
       features: [...points.values()].map(s => ({ type: 'Feature', properties: { id: s.id, color }, geometry: { type: 'Point', coordinates: s.lonlat } })),
     });
-    legend.textContent = 'Sentidos: ' + data.directions.map(d => `hacia ${d.stops.at(-1)[3] || 'el último paradero'}`).join(' · ');
-    legend.hidden = false;
     map.fitBounds(all, { padding: { top: 40, bottom: 70, left: 30, right: 30 }, maxZoom: 15, duration: reduceMotion ? 0 : 700 });
   }
 
@@ -153,7 +146,7 @@ async function main() {
     current = null; stops = new Map();
     for (const s of ['route-lines', 'route-stops']) map.getSource(s).setData(empty());
     closeStop();
-    legend.hidden = true; say(statusEl, ''); hint.hidden = false;
+    say(statusEl, ''); hint.hidden = false;
     history.replaceState(null, '', location.pathname);
   }
 

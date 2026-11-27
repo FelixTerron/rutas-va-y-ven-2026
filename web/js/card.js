@@ -14,10 +14,9 @@ export function createCard(routeInfo, onRoute) {
     if (e.key === 'Escape' && !root.hidden && e.target.id !== 'route-input') hide();
   });
 
-  function show({ id, name, towards, routes }, currentRoute) {
+  function show({ id, name, routes }, currentRoute) {
     $('card-name').textContent = name || 'Paradero sin nombre';
     $('card-id').textContent = `Paradero n.º ${id}`;
-    $('card-dir').textContent = towards.length ? `Sentido de esta ruta: hacia ${towards.join(' y hacia ')}` : '';
     const chips = $('card-routes');
     chips.replaceChildren();
     for (const num of routes) {

@@ -133,8 +133,7 @@ try {
     const route = ox[0];
     await waitFor(`vanyven.map.queryRenderedFeatures({layers:["route-stops"]}).length>5`, 'paraderos de la ruta dibujados');
     check((await ev('document.getElementById("route-input").value')).startsWith(`${route} · `), 'selector: Enter elige la ruta y la muestra en el campo');
-    const dests = (await ev('document.getElementById("legend").innerText')).match(/^Sentidos: hacia (.+) · hacia (.+)$/);
-    check(!(await visible('#hint')) && !!dests && dests[1] !== dests[2], 'mapa: al elegir se oculta la invitación y se indican los dos sentidos con destinos distintos', dests?.slice(1).join(' | '));
+    check(!(await visible('#hint')), 'mapa: al elegir se oculta la invitación');
     check((await ev('location.search')) === `?ruta=${route}`, 'la dirección recuerda la ruta (se puede compartir)');
     check(await ev('vanyven.map.queryRenderedFeatures({layers:["route-line"]}).length>0'), 'mapa: se dibuja el recorrido');
 
@@ -168,8 +167,7 @@ try {
       const chips = await ev('[...document.querySelectorAll("#card-routes button")].map(b=>b.textContent)');
       check(chips.join() === a[4].split(',').join(), 'ficha: muestra las rutas que pasan', chips.join(','));
       check(chips.includes(route), 'ficha: las rutas que pasan incluyen la ruta elegida');
-      check(/Sentido de esta ruta: hacia /.test(await ev('document.getElementById("card-dir").innerText')), 'ficha: indica el sentido');
-      check(!/por hora|frecuencia|camiones/i.test(await ev('document.getElementById("stop-card").innerText')), 'ficha: no muestra estimaciones de frecuencia');
+      check(!/por hora|frecuencia|camiones|sentido|hacia/i.test(await ev('document.getElementById("stop-card").innerText')), 'ficha: no muestra estimaciones de frecuencia ni destinos (basta el número de la ruta)');
       check(await ev(`(()=>{const r=document.getElementById("stop-card").getBoundingClientRect();return r.left>=0&&r.right<=innerWidth&&r.bottom<=innerHeight})()`), 'ficha: cabe dentro de la pantalla');
       check(await apart('#stop-card', '.maplibregl-ctrl-attrib') && await apart('#stop-card', '.maplibregl-ctrl-zoom-in'), 'ficha: no tapa la atribución ni el zoom del mapa');
 

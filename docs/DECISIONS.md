@@ -180,9 +180,8 @@ Responde a «¿qué % de las **personas** (no de la calle) vive cerca de una par
   fuera de él, para que no se encimen con los controles ni con la atribución de OpenStreetMap.
 - **Rutas que pasan** añadidas a cada paradero (5.º elemento, p. ej. `"3,26,100"`; decisión del usuario): +14 KB, **219 KB comprimidos en total**. Cuenta todas las variantes de la ruta
   base, no solo el trazo mostrado.
-- **Hallazgo: el destino (`trip_headsign`) es el nombre de la ruta en las 105 rutas, igual en los dos sentidos.** Mostrar «hacia Xmatkuil» en el regreso sería falso. Ya no se guarda:
-  cada sentido va «hacia» su **último paradero** (en el último paradero de un sentido no se anota ese destino). Los nombres de paradero son cruces y referencias (p. ej. «R23 C-71 x 54 y 52 Col. Centro»);
-  si resultan poco claros se puede mostrar solo el nombre de la terminal.
+- **Hallazgo: el destino (`trip_headsign`) es el nombre de la ruta en las 105 rutas, igual en los dos sentidos.** Ya no se guarda. **Decisión del usuario (2026-11-26): no se muestra destino ni sentido
+  en texto; basta con el número de la ruta** (el sentido de las rutas no está muy definido en Mérida). Los dos sentidos siguen dibujándose, con un pequeño desfase y flechas; la ficha no dice «hacia dónde».
 - **Una ruta a la vez** en el mapa (supuesto mío, sin objeción): los dos sentidos se separan con un pequeño desfase a la derecha del sentido de marcha y llevan flechas.
   La dirección guarda la ruta (`mapa.html?ruta=10`) para poder compartirla; solo se acepta un número de ruta (dígitos), porque entra en el nombre de un archivo.
 - **Ficha única** (un solo elemento en la página). Tocar una de las «rutas que pasan» elige esa ruta y, si el paradero está en ella, mantiene la ficha. Para tocar con el dedo, cuenta el

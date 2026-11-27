@@ -35,7 +35,6 @@ h1, h2, h3, p { margin: 0; }
 .map-page { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
 .topbar { position: relative; z-index: 5; flex: none; padding: 8px 16px 10px; background: var(--card); border-bottom: 1px solid var(--line); display: grid; gap: 6px; }
 .brand { font-weight: 700; color: var(--accent); text-decoration: none; justify-self: start; padding: 2px 0; }
-.legend { font-size: 13px; color: var(--muted); }
 .selector { position: relative; display: flex; align-items: center; background: #fff; border: 1.5px solid #8a9096; border-radius: 12px; }
 .selector:focus-within { border-color: var(--accent); outline: 3px solid var(--accent); outline-offset: 1px; }
 .selector input { flex: 1; min-width: 0; height: 48px; padding: 0 8px 0 12px; border: 0; background: none; font: inherit; color: inherit; border-radius: 12px; }
@@ -74,8 +73,7 @@ h1, h2, h3, p { margin: 0; }
 .chips button:disabled { background: #e6e3db; color: var(--muted); cursor: default; }
 
 @media (min-width: 700px) {
-  .topbar { grid-template-columns: auto minmax(280px, 460px) 1fr; align-items: center; column-gap: 16px; }
-  .legend { justify-self: end; }
+  .topbar { grid-template-columns: auto minmax(280px, 460px); align-items: center; column-gap: 16px; }
   .stop-card { right: auto; width: 380px; left: 12px; bottom: 36px; }
 }
 @media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto !important; } }
