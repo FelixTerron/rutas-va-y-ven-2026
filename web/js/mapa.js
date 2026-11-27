@@ -1,5 +1,5 @@
 // Página del mapa: el mapa empieza vacío; al elegir una ruta se dibujan sus dos sentidos y sus paraderos.
-import { DATA_BASE, STYLE_URL, MERIDA, BASEMAP_DIR, BASEMAP_FLAVORS } from './config.js';
+import { DATA_BASE, MERIDA, BASEMAP_DIR } from './config.js';
 import { isRouteNumber, safeColor } from './util.js';
 import { createSelector } from './selector.js';
 import { createCard } from './card.js';
@@ -26,21 +26,18 @@ function chevron() {
   return g.getImageData(0, 0, s, s);
 }
 
-// PROTOTIPO: ?base=<flavor> usa el mapa base autohospedado (PMTiles); sin él, OpenFreeMap.
-const flavor = BASEMAP_FLAVORS.find(f => f === new URLSearchParams(location.search).get('base'));
-const keepBase = flavor ? `&base=${flavor}` : '';
-
-async function styleFor() {
-  if (!flavor) return STYLE_URL;
+/** Estilo del mapa base propio: el JSON lleva marcadores @...@ en lugar de direcciones (MapLibre pide absolutas). */
+async function mapStyle() {
   await new Promise((ok, fail) => {
     const s = document.createElement('script');
-    s.src = `${BASEMAP_DIR}/pmtiles.js`; s.onload = ok; s.onerror = fail;
+    s.src = `${BASEMAP_DIR}/pmtiles.js`; s.onload = ok; s.onerror = () => fail(new Error('pmtiles.js no cargó'));
     document.head.append(s);
   });
   maplibregl.addProtocol('pmtiles', new pmtiles.Protocol().tile);
   const dir = new URL(BASEMAP_DIR, location.href).href;
-  const text = await (await fetch(`${BASEMAP_DIR}/style-${flavor}.json`)).text();
-  return JSON.parse(text.replace('@GLYPHS@', `${dir}/fonts`).replace('@SPRITE@', `${dir}/sprites`)
+  const r = await fetch(`${BASEMAP_DIR}/style.json`);
+  if (!r.ok) throw new Error(`style.json: HTTP ${r.status}`);
+  return JSON.parse((await r.text()).replace('@GLYPHS@', `${dir}/fonts`).replace('@SPRITE@', `${dir}/sprites`)
     .replace('@PMTILES@', `${dir}/merida.pmtiles`));
 }
 
@@ -60,10 +57,16 @@ async function main() {
   const cache = new Map();
   let stops = new Map(), current = null, token = 0;
 
+  let style;
+  try { style = await mapStyle(); } catch (e) {
+    console.error(e.message ?? e);
+    say(hint, 'No se pudo cargar el mapa base. Revisa tu conexión e intenta de nuevo.');
+    return;
+  }
   let map;
   try {
     map = new maplibregl.Map({
-      container: 'map', style: await styleFor(), center: MERIDA.center, minZoom: 8, maxZoom: 18,
+      container: 'map', style, center: MERIDA.center, minZoom: 8, maxZoom: 18,
       zoom: innerWidth < 600 ? MERIDA.zoomNarrow : MERIDA.zoom, dragRotate: false, pitchWithRotate: false,
     });
   } catch {
@@ -154,7 +157,7 @@ async function main() {
     cache.set(num, data);
     current = data;
     say(statusEl, '');
-    history.replaceState(null, '', `?ruta=${num}${keepBase}`);
+    history.replaceState(null, '', `?ruta=${num}`);
     draw(data);
     if (keepStop && stops.has(keepStop)) openStop(keepStop); else closeStop();
   }
@@ -165,7 +168,7 @@ async function main() {
     for (const s of ['route-lines', 'route-stops']) map.getSource(s).setData(empty());
     closeStop();
     say(statusEl, ''); hint.hidden = false;
-    history.replaceState(null, '', location.pathname + keepBase.replace('&', '?'));
+    history.replaceState(null, '', location.pathname);
   }
 
   map.on('click', e => {

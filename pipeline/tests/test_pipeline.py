@@ -18,7 +18,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point, box
 
-from va_y_ven import access, gtfs, population, public_data, serve, viewer
+from va_y_ven import access, basemap, gtfs, population, public_data, serve, viewer
 
 UNREACHED = access.UNREACHED_M
 
@@ -290,6 +290,27 @@ def test_serve_sends_exactly_the_requested_bytes_and_hides_other_folders():
         else:
             raise AssertionError("no debía servir data/raw")
         server.shutdown()
+
+
+def test_basemap_rejects_downloads_whose_digest_does_not_match():
+    import base64
+    import hashlib
+
+    data = b"mapa"
+    sha256 = hashlib.sha256(data).hexdigest()
+    sha512 = "sha512-" + base64.b64encode(hashlib.sha512(data).digest()).decode()
+    assert basemap.verified(data, sha256, "a") == data
+    assert basemap.verified(data, sha512, "b") == data
+    for expected in (sha256, sha512):
+        try:
+            basemap.verified(b"alterado", expected, "x")
+        except RuntimeError:
+            continue
+        raise AssertionError("debía rechazar un archivo alterado")
+    # Las huellas fijadas tienen la forma esperada (un descuido al pegarlas la rompería)
+    assert all(len(h) == 64 for h in [basemap.CLI_SHA256, *basemap.ASSETS.values()])
+    npm = [i for _, i in basemap.NPM.values()]
+    assert all(i.startswith("sha512-") and len(i) == 7 + 88 for i in npm)
 
 
 if __name__ == "__main__":

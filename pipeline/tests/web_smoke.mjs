@@ -2,9 +2,9 @@
 // servidor propio de Node (solo esas dos carpetas, nunca el GTFS crudo), abre Chrome sin ventana en
 // tamaño de celular y de escritorio y comprueba lo que importa: que la búsqueda y la ficha funcionan,
 // que hay una sola ficha abierta, que nada se sale de la pantalla, que no hay errores y que la
-// página de inicio sigue siendo ligera. Necesita el mapa base en línea (OpenFreeMap).
+// página de inicio sigue siendo ligera. No necesita internet (el mapa base es propio).
 //
-// Antes: PYTHONPATH=pipeline uv run python -m va_y_ven.public_data  y  ... -m va_y_ven.web_vendor
+// Antes: PYTHONPATH=pipeline uv run python -m va_y_ven.public_data, ... -m va_y_ven.web_vendor y ... -m va_y_ven.basemap
 // Uso (desde la raíz del repo; ver CLAUDE.md para activar Node):
 //   node pipeline/tests/web_smoke.mjs
 // Sale con código 1 si algo falla.
@@ -19,7 +19,7 @@ import { isRouteNumber, safeColor, textOn } from '../../web/js/util.js';
 const root = resolve(import.meta.dirname, '../..');
 const HOME_BUDGET_KB = 150;  // la página de inicio (sin mapa), comprimida; propuesta de diseño, ver DECISIONS.md
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
-  '.json': 'application/json; charset=utf-8' };
+  '.json': 'application/json; charset=utf-8', '.png': 'image/png', '.pbf': 'application/x-protobuf' };
 
 const failures = [];
 const check = (ok, what, detail = '') => {
@@ -39,7 +39,11 @@ const server = createServer(async (req, res) => {
   try {
     const body = await readFile(file);
     served.set(path, gzipSync(body).length);
-    res.writeHead(200, { 'Content-Type': TYPES[extname(file)] ?? 'application/octet-stream' }).end(body);
+    const type = TYPES[extname(file)] ?? 'application/octet-stream';
+    const m = /^bytes=(\d+)-(\d*)$/.exec(req.headers.range ?? '');  // PMTiles pide el mapa por rangos
+    if (!m) return res.writeHead(200, { 'Content-Type': type }).end(body);
+    const a = +m[1], b = m[2] === '' ? body.length - 1 : Math.min(+m[2], body.length - 1);
+    res.writeHead(206, { 'Content-Type': type, 'Content-Range': `bytes ${a}-${b}/${body.length}` }).end(body.subarray(a, b + 1));
   } catch { res.writeHead(404).end('no'); }
 });
 await new Promise(r => server.listen(0, '127.0.0.1', r));
@@ -96,7 +100,7 @@ try {
     check(await ev('document.querySelector("a.big-link").getAttribute("href")') === 'mapa.html', 'inicio: el botón lleva al mapa');
     check(/no recopila datos sobre cómo usas el transporte público: ni qué rutas tomas, ni de dónde a dónde, ni a qué hora/.test(home), 'inicio: aviso de privacidad aprobado');
     check(/no pertenece ni está afiliado a la ATY, a ningún gobierno ni a ningún partido político/.test(home), 'inicio: aviso de independencia');
-    check(/ATY \(GTFS\)/.test(home) && /OpenStreetMap/.test(home) && /OpenFreeMap/.test(home), 'inicio: fuentes citadas (ATY, OpenStreetMap, OpenFreeMap)');
+    check(/ATY \(GTFS\)/.test(home) && /OpenStreetMap/.test(home) && /Protomaps/.test(home), 'inicio: fuentes citadas (ATY, OpenStreetMap, Protomaps)');
     check(!/sin fines de lucro/i.test(home), 'inicio: no se declara «sin fines de lucro»');
     check(await noOverflow(), 'inicio: nada se sale del ancho de la pantalla');
     const homeKb = [...served.values()].reduce((a, b) => a + b, 0) / 1024;
@@ -105,6 +109,9 @@ try {
     // Mapa vacío y selector
     await go('/web/mapa.html');
     if (!await waitFor('!!window.vanyven && !!vanyven.map.getLayer("stop-selected")', 'el mapa y sus capas')) continue;
+    // El mapa base es propio: las calles salen de merida.pmtiles (leído por rangos) y solo se pidió a este servidor
+    check(await waitFor('vanyven.map.querySourceFeatures("protomaps",{sourceLayer:"roads"}).length>0', 'teselas de calles del mapa base propio', 30_000),
+      'mapa: el mapa base propio dibuja calles', `${[...served.keys()].filter(p => p.includes('basemap')).length} archivos de vendor/basemap`);
     check(await visible('#hint'), 'mapa: empieza vacío con la invitación a elegir una ruta');
     check(await noOverflow(), 'mapa: nada se sale del ancho de la pantalla');
     check(await ev('document.getElementById("route-input").getBoundingClientRect().height>=44'), 'selector: el campo mide al menos 44 px de alto');

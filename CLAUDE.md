@@ -40,7 +40,7 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 - Comandos (todos con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`): `download` (GTFS), `streets` (red
   peatonal de OSM, una vez), `coverage`, `access` y `population` `[weekday|saturday|sunday]`, `viewer` (genera
   `data/processed/mapa.html`, ~30 s; `open data/processed/mapa.html` para verlo) y `public_data` (archivos ligeros de la
-  vista pública en `data/processed/public/`, ~1 s) `web_vendor` (copia MapLibre verificado a `web/vendor/`, no se versiona) y `serve` (servidor local de la web).
+  vista pública en `data/processed/public/`, ~1 s) `web_vendor` (copia MapLibre verificado a `web/vendor/`, no se versiona), `basemap` (mapa base propio de la web en `web/vendor/basemap/`, huellas verificadas; necesita Node) y `serve` (servidor local de la web).
 - Visor: toda función nueva se describe en la ventana «? Cómo usar» (`viewer_template.html`, `<dialog id="help">`) y
   sus límites en «Consideraciones». Decisión del usuario: el visor informa, **no califica** el servicio (sin umbrales
   de «frecuente»/«bueno»/«malo»).
@@ -52,10 +52,10 @@ Hecho: descarga del GTFS (`download.py`), lectura (`gtfs.py`), rutas distintas p
 caminando a la parada más cercana con la red de OSM (`streets.py`, `access.py`), visor HTML local (`viewer.py`) con
 paradas, rutas y frecuencia estimada (7-9 h) por parada, guía y consideraciones, acceso ponderado por población
 (INEGI, `population.py`: 72.8 % de las personas a ≤400 m, rango 58-85 %; el visor **requiere** `data/raw/inegi/`),
-datos ligeros de la vista pública (`public_data.py`: 105 rutas, 219 KB comprimidos en total), 18 pruebas y dos pruebas de humo (visor y web).
+datos ligeros de la vista pública (`public_data.py`: 105 rutas, 219 KB comprimidos en total), 22 pruebas y dos pruebas de humo (visor y web; la web corre sin internet).
 Ahora: el diseño de la vista pública está cerrado en lo esencial y se construye por fases (hoja de ruta en
 `docs/DECISIONS.md`): hechas la fase 1 (datos) y la fase 2 (web mínima en `web/`: inicio, mapa con selector de ruta y ficha
-de paradero); sigue la fase 3 (votos con valores de ejemplo; «Tu trayecto» espera los datos de colonias). Falta diseñar los
+de paradero, con mapa base propio de Protomaps desde el 2026-11-27); sigue la fase 3 (votos con valores de ejemplo; «Tu trayecto» espera los datos de colonias). Falta diseñar los
 4 features de análisis. Pendientes: soporte táctil del visor de análisis (al final, no olvidar),
 conciliar 174/117/205 rutas, nombres de calle.
 Estado completo en `docs/ADDENDUM_2026-11-13.md`; decisiones en `docs/DECISIONS.md`.

@@ -31,7 +31,20 @@
 | Licencia | ODbL © colaboradores de OpenStreetMap: atribuir; si se publican derivados, compartirlos bajo la misma licencia |
 | Vigencia | Es una foto de esa fecha; si cambia la red vial o se mapean cruces nuevos, hay que volver a descargar |
 
-## Mapa base: OpenFreeMap (teselas) y MapLibre GL JS (registrado el 2026-11-26)
+## Mapa base de la vista pública: Protomaps (PMTiles autohospedado) (adoptado el 2026-11-27)
+
+| Campo | Valor |
+|---|---|
+| Datos | Compilación diaria de Protomaps `20261125` (`build.protomaps.com`), recortada a Mérida (lon -89.85..-89.40, lat 20.74..21.26; cubre las 105 rutas), zoom 0-15, 6.0 MB. Datos de **OpenStreetMap (ODbL)**. Se recorta una vez con `pmtiles extract` (lee unos pocos MB por rangos; Protomaps desaconseja enlazar directo a las compilaciones) y se sirve desde `web/vendor/basemap/` (no se versiona) |
+| Estilo | `@protomaps/basemaps` 5.7.2, «grayscale» (el que mejor resalta las rutas), etiquetas en español, una sola tipografía (Noto Sans Regular, SIL OFL). Íconos: sprite «light» de `protomaps/basemaps-assets`. Diseño CC0 y código BSD-3 según el paquete |
+| Atribución | En el mapa «© OpenStreetMap» (del estilo) y en el pie de la página «© OpenStreetMap contributors, Protomaps» |
+| Privacidad | La página del mapa **no pide nada a terceros** (CSP `connect-src 'self'`); quien aloje el sitio verá la IP como en cualquier página. Se cierra lo que dejaba abierto OpenFreeMap (IP hacia OpenFreeMap y Cloudflare) |
+| Verificación | `va_y_ven.basemap` rechaza cualquier descarga cuya huella no coincida: binario `pmtiles` 1.31.2 (SHA-256 de GitHub; **solo macOS arm64**), `pmtiles.js` 4.5.0 y `@protomaps/basemaps` 5.7.2 (SHA-512 del registro de npm) y fuentes e íconos (SHA-256, commit fijo). Sin scripts de instalación; no se tocó `package.json` |
+| Riesgos | Las compilaciones diarias se retiran con el tiempo: para actualizar hay que pasar una fecha reciente. Los datos envejecen (recorte de 2026-11-25): refrescar de vez en cuando. No se leyeron los términos de uso de `build.protomaps.com` más allá de la nota sobre enlazar directo (uso: una descarga de 6 MB) |
+
+## Mapa base de OpenFreeMap (registro histórico, 2026-11-26) y MapLibre GL JS
+
+*Desde el 2026-11-27 la **vista pública ya no usa OpenFreeMap** (ver la sección anterior); lo sigue usando el visor de análisis, que es local y no se publica. Lo de abajo queda como registro de lo leído.*
 
 | Campo | Valor |
 |---|---|
