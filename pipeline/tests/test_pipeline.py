@@ -7,6 +7,10 @@ Uso (desde la raíz del repo):  PYTHONPATH=pipeline uv run python pipeline/tests
 from __future__ import annotations
 
 import tempfile
+import threading
+import urllib.error
+import urllib.request
+from http.server import ThreadingHTTPServer
 from pathlib import Path
 
 import geopandas as gpd
@@ -14,7 +18,7 @@ import numpy as np
 import pandas as pd
 from shapely.geometry import LineString, Point, box
 
-from va_y_ven import access, gtfs, population, public_data, viewer
+from va_y_ven import access, gtfs, population, public_data, serve, viewer
 
 UNREACHED = access.UNREACHED_M
 
@@ -243,6 +247,49 @@ def test_public_simplify_drops_a_1m_wiggle_keeps_ends_and_a_real_bend():
     end = round(x + 0.002, 5)  # el trazo sale redondeado a 5 decimales
     assert out["s"] == [[x, y], [end, y]]
     assert len(out["b"]) == 3 and out["b"][0] == [x, y] and out["b"][-1] == [end, y]
+
+
+def test_serve_parses_one_byte_range_and_rejects_the_rest():
+    assert serve.parse_range("", 100) is None
+    assert serve.parse_range("bytes=0-9", 100) == (0, 9)
+    assert serve.parse_range("bytes=90-", 100) == (90, 99)  # sin fin: hasta el último byte
+    assert serve.parse_range("bytes=90-500", 100) == (90, 99)  # el fin se recorta al tamaño
+    assert serve.parse_range("bytes=-10", 100) == (90, 99)  # los últimos 10 bytes
+    for bad in ["bytes=100-", "bytes=5-2", "bytes=-", "bytes=-0", "items=0-1", "bytes=0-1,5-6"]:
+        try:
+            serve.parse_range(bad, 100)
+        except ValueError:
+            continue
+        raise AssertionError(f"debía rechazar {bad!r}")
+
+
+def test_serve_only_allows_files_under_web_and_public_data():
+    assert serve.allowed_file("/web/index.html") is not None
+    assert serve.allowed_file("/web/js/../index.html") is not None  # sigue dentro de web/
+    outside_paths = ["/README.md", "/web/../README.md", "/web/..%2FREADME.md", "/data/raw/x"]
+    for outside in [*outside_paths, "/../etc/passwd"]:
+        assert serve.allowed_file(outside) is None, outside
+
+
+def test_serve_sends_exactly_the_requested_bytes_and_hides_other_folders():
+    index = gtfs.ROOT / "web" / "index.html"
+    full = index.read_bytes()
+    with ThreadingHTTPServer(("127.0.0.1", 0), serve.Handler) as server:
+        threading.Thread(target=server.serve_forever, daemon=True).start()
+        base = f"http://127.0.0.1:{server.server_address[1]}"
+        part = urllib.request.Request(f"{base}/web/index.html", headers={"Range": "bytes=10-29"})
+        with urllib.request.urlopen(part) as r:
+            assert r.status == 206 and r.headers["Content-Range"] == f"bytes 10-29/{len(full)}"
+            assert r.headers["Content-Length"] == "20" and r.read() == full[10:30]
+        with urllib.request.urlopen(f"{base}/web/index.html") as r:
+            assert r.status == 200 and r.read() == full
+        try:
+            urllib.request.urlopen(f"{base}/data/raw/gtfs/stops.txt")
+        except urllib.error.HTTPError as e:
+            assert e.code == 404
+        else:
+            raise AssertionError("no debía servir data/raw")
+        server.shutdown()
 
 
 if __name__ == "__main__":

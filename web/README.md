@@ -18,7 +18,9 @@ Los datos salen de `data/processed/public/` (no se versiona; ver `pipeline/va_y_
 ```bash
 PYTHONPATH=pipeline uv run python -m va_y_ven.public_data   # datos ligeros (1 s)
 PYTHONPATH=pipeline uv run python -m va_y_ven.web_vendor    # MapLibre verificado por huella (una vez)
-python -m http.server --bind 127.0.0.1                      # solo esta máquina; abrir http://127.0.0.1:8000/web/
+PYTHONPATH=pipeline uv run python -m va_y_ven.serve         # solo esta máquina; abrir http://127.0.0.1:8000/web/
 eval "$(fnm env --shell bash)" && fnm use && node pipeline/tests/web_smoke.mjs   # prueba de humo
 ```
-Importa `--bind 127.0.0.1`: sin él, el servidor escucha en toda la red y serviría también `data/raw/`.
+`va_y_ven.serve` reemplaza a `python -m http.server`: solo sirve `web/` y los datos públicos, solo en `127.0.0.1`, y entiende peticiones por rangos (el mapa autohospedado las necesita; `http.server` las ignora).
+
+**Prototipo del mapa base propio:** `mapa.html?base=grayscale` (o `light`, `white`, `dark`) usa los archivos de `web/vendor/basemap/` en vez de OpenFreeMap; la receta para generarlos está en `docs/DECISIONS.md`.

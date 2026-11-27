@@ -24,8 +24,8 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
   (después de `viewer`; Node vía `fnm`, usa el Chrome instalado, sin paquetes): `node pipeline/tests/viewer_smoke.mjs`.
 - Código del pipeline en `pipeline/va_y_ven/`. Ejecutar con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`.
 - Web: sitio estático **sin empaquetador** (páginas y módulos JS nativos + MapLibre GL JS verificado por huella) en
-  `web/` (decisión 2026-11-25: TypeScript/Vite descartado por ahora; en local, `python -m http.server --bind 127.0.0.1` desde la raíz
-  del repo, ver `web/README.md`; prueba de humo: `node pipeline/tests/web_smoke.mjs`).
+  `web/` (decisión 2026-11-25: TypeScript/Vite descartado por ahora; en local, `PYTHONPATH=pipeline uv run python -m va_y_ven.serve` desde la raíz
+  del repo (solo `web/`, solo 127.0.0.1, con rangos; ver `web/README.md`); prueba de humo: `node pipeline/tests/web_smoke.mjs`).
   Node 24.22.2 vía `fnm` (`.node-version`),
   pnpm 12.17.0 vía Corepack. Usar siempre **pnpm** (no npm). Antes de ejecutar: `eval "$(fnm env --shell bash)" && fnm use`.
 - Seguridad de dependencias (ataques de cadena de suministro a npm en 2026): no añadir paquetes sin revisarlos y
@@ -40,7 +40,7 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 - Comandos (todos con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`): `download` (GTFS), `streets` (red
   peatonal de OSM, una vez), `coverage`, `access` y `population` `[weekday|saturday|sunday]`, `viewer` (genera
   `data/processed/mapa.html`, ~30 s; `open data/processed/mapa.html` para verlo) y `public_data` (archivos ligeros de la
-  vista pública en `data/processed/public/`, ~1 s) y `web_vendor` (copia MapLibre verificado a `web/vendor/`, no se versiona).
+  vista pública en `data/processed/public/`, ~1 s) `web_vendor` (copia MapLibre verificado a `web/vendor/`, no se versiona) y `serve` (servidor local de la web).
 - Visor: toda función nueva se describe en la ventana «? Cómo usar» (`viewer_template.html`, `<dialog id="help">`) y
   sus límites en «Consideraciones». Decisión del usuario: el visor informa, **no califica** el servicio (sin umbrales
   de «frecuente»/«bueno»/«malo»).

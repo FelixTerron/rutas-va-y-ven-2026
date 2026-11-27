@@ -1,5 +1,5 @@
 // Página del mapa: el mapa empieza vacío; al elegir una ruta se dibujan sus dos sentidos y sus paraderos.
-import { DATA_BASE, STYLE_URL, MERIDA } from './config.js';
+import { DATA_BASE, STYLE_URL, MERIDA, BASEMAP_DIR, BASEMAP_FLAVORS } from './config.js';
 import { isRouteNumber, safeColor } from './util.js';
 import { createSelector } from './selector.js';
 import { createCard } from './card.js';
@@ -26,6 +26,24 @@ function chevron() {
   return g.getImageData(0, 0, s, s);
 }
 
+// PROTOTIPO: ?base=<flavor> usa el mapa base autohospedado (PMTiles); sin él, OpenFreeMap.
+const flavor = BASEMAP_FLAVORS.find(f => f === new URLSearchParams(location.search).get('base'));
+const keepBase = flavor ? `&base=${flavor}` : '';
+
+async function styleFor() {
+  if (!flavor) return STYLE_URL;
+  await new Promise((ok, fail) => {
+    const s = document.createElement('script');
+    s.src = `${BASEMAP_DIR}/pmtiles.js`; s.onload = ok; s.onerror = fail;
+    document.head.append(s);
+  });
+  maplibregl.addProtocol('pmtiles', new pmtiles.Protocol().tile);
+  const dir = new URL(BASEMAP_DIR, location.href).href;
+  const text = await (await fetch(`${BASEMAP_DIR}/style-${flavor}.json`)).text();
+  return JSON.parse(text.replace('@GLYPHS@', `${dir}/fonts`).replace('@SPRITE@', `${dir}/sprites`)
+    .replace('@PMTILES@', `${dir}/merida.pmtiles`));
+}
+
 function say(el, msg) { el.textContent = msg; el.hidden = !msg; }
 
 async function main() {
@@ -45,7 +63,7 @@ async function main() {
   let map;
   try {
     map = new maplibregl.Map({
-      container: 'map', style: STYLE_URL, center: MERIDA.center, minZoom: 8, maxZoom: 18,
+      container: 'map', style: await styleFor(), center: MERIDA.center, minZoom: 8, maxZoom: 18,
       zoom: innerWidth < 600 ? MERIDA.zoomNarrow : MERIDA.zoom, dragRotate: false, pitchWithRotate: false,
     });
   } catch {
@@ -136,7 +154,7 @@ async function main() {
     cache.set(num, data);
     current = data;
     say(statusEl, '');
-    history.replaceState(null, '', `?ruta=${num}`);
+    history.replaceState(null, '', `?ruta=${num}${keepBase}`);
     draw(data);
     if (keepStop && stops.has(keepStop)) openStop(keepStop); else closeStop();
   }
@@ -147,7 +165,7 @@ async function main() {
     for (const s of ['route-lines', 'route-stops']) map.getSource(s).setData(empty());
     closeStop();
     say(statusEl, ''); hint.hidden = false;
-    history.replaceState(null, '', location.pathname);
+    history.replaceState(null, '', location.pathname + keepBase.replace('&', '?'));
   }
 
   map.on('click', e => {
