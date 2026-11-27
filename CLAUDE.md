@@ -40,7 +40,7 @@ Español para docs, comentarios y comunicación. Identificadores de código en i
 - Comandos (todos con `PYTHONPATH=pipeline uv run python -m va_y_ven.<modulo>`): `download` (GTFS), `streets` (red
   peatonal de OSM, una vez), `coverage`, `access` y `population` `[weekday|saturday|sunday]`, `viewer` (genera
   `data/processed/mapa.html`, ~30 s; `open data/processed/mapa.html` para verlo) y `public_data` (archivos ligeros de la
-  vista pública en `data/processed/public/`, ~1 s) `web_vendor` (copia MapLibre verificado a `web/vendor/`, no se versiona), `basemap` (mapa base propio de la web en `web/vendor/basemap/`, huellas verificadas; necesita Node) y `serve` (servidor local de la web).
+  vista pública en `data/processed/public/`, ~1 s) `web_vendor` (copia MapLibre verificado a `web/vendor/`, no se versiona), `basemap` (mapa base propio de la web en `web/vendor/basemap/`, huellas verificadas; necesita Node) y `serve` (servidor local de la web; `--lan` lo abre a tu Wi-Fi para probar en el celular).
 - Visor: toda función nueva se describe en la ventana «? Cómo usar» (`viewer_template.html`, `<dialog id="help">`) y
   sus límites en «Consideraciones». Decisión del usuario: el visor informa, **no califica** el servicio (sin umbrales
   de «frecuente»/«bueno»/«malo»).

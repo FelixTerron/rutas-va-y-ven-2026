@@ -23,6 +23,8 @@ PYTHONPATH=pipeline uv run python -m va_y_ven.basemap       # mapa base de Méri
 PYTHONPATH=pipeline uv run python -m va_y_ven.serve         # solo esta máquina; abrir http://127.0.0.1:8000/web/
 eval "$(fnm env --shell bash)" && fnm use && node pipeline/tests/web_smoke.mjs   # prueba de humo
 ```
+**Probar en un celular (misma red Wi-Fi):** `PYTHONPATH=pipeline uv run python -m va_y_ven.serve --lan` imprime una dirección tipo `http://192.168.x.x:8000/web/`; ábrela en el celular. Escucha solo en la dirección de tu Wi-Fi y solo sirve `web/` y los datos públicos; úsalo en una red de confianza (tu casa), no en un café. Si no abre: revisa que el celular esté en la misma red (no en la de invitados, que a veces aísla equipos) y que macOS permita las conexiones entrantes.
+
 `va_y_ven.serve` reemplaza a `python -m http.server`: solo sirve `web/` y los datos públicos, solo en `127.0.0.1`, y entiende peticiones por rangos (el mapa autohospedado las necesita; `http.server` las ignora).
 
 **Mapa base propio:** Protomaps (PMTiles) recortado a Mérida, servido desde `vendor/basemap/` con `pmtiles.js`; la página no pide nada a terceros. Estilo «grayscale» con etiquetas en español y una sola tipografía. Decisión y mediciones en `docs/DECISIONS.md`.

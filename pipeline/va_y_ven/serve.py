@@ -1,17 +1,24 @@
 """Servidor local de la web: solo ``web/`` y ``data/processed/public/``, solo en esta máquina.
+Con ``--lan`` se abre además a tu red Wi-Fi, para probar en un celular (opcional; ver abajo).
 
 Reemplaza a ``python -m http.server``, que (1) escucha en toda la red y serviría también
 ``data/raw/`` y (2) ignora las peticiones por rangos (``Range``) que necesita el mapa base
 autohospedado (PMTiles).
 
 Uso (desde la raíz del repo):
-    PYTHONPATH=pipeline uv run python -m va_y_ven.serve [puerto]   # abrir http://127.0.0.1:8000/web/
+    PYTHONPATH=pipeline uv run python -m va_y_ven.serve [puerto]         # http://127.0.0.1:8000/web/
+    PYTHONPATH=pipeline uv run python -m va_y_ven.serve [puerto] --lan   # además, en tu red local
+
+``--lan`` escucha solo en la dirección de tu Wi-Fi (no en todas las interfaces) y la imprime;
+cualquier equipo de esa red podrá abrir la web: úsalo en una red de confianza (tu casa),
+no en un café.
 """
 
 from __future__ import annotations
 
 import mimetypes
 import re
+import socket
 import sys
 from http import HTTPStatus
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -107,10 +114,30 @@ class Handler(BaseHTTPRequestHandler):
             pass
 
 
+def parse_args(argv: list[str]) -> tuple[int, bool]:
+    """``[puerto] [--lan]`` en cualquier orden -> (puerto, lan)."""
+    rest = [a for a in argv if a != "--lan"]
+    return (int(rest[0]) if rest else 8000), "--lan" in argv
+
+
+def lan_address() -> str:
+    """Dirección de esta máquina en la red local (un socket UDP «conectado» no envía nada)."""
+    with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
+        try:
+            s.connect(("10.255.255.255", 1))
+        except OSError:
+            raise SystemExit("No hay red local (¿Wi-Fi apagado?): no se puede usar --lan") from None
+        return s.getsockname()[0]
+
+
 def main() -> None:
-    port = int(sys.argv[1]) if len(sys.argv) > 1 else 8000
-    with ThreadingHTTPServer(("127.0.0.1", port), Handler) as server:
-        print(f"Sirviendo http://127.0.0.1:{port}/web/ (solo esta máquina; Ctrl+C para salir)")
+    port, lan = parse_args(sys.argv[1:])
+    host = lan_address() if lan else "127.0.0.1"
+    with ThreadingHTTPServer((host, port), Handler) as server:
+        who = "visible para todos los equipos de tu red local" if lan else "solo esta máquina"
+        print(f"Sirviendo http://{host}:{port}/web/ ({who}; Ctrl+C para salir)")
+        if lan:
+            print("Red de confianza. Si macOS pregunta por conexiones entrantes, permítelas.")
         server.serve_forever()
 
 

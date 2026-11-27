@@ -313,6 +313,14 @@ def test_basemap_rejects_downloads_whose_digest_does_not_match():
     assert all(i.startswith("sha512-") and len(i) == 7 + 88 for i in npm)
 
 
+def test_serve_args_default_to_this_machine_only():
+    assert serve.parse_args([]) == (8000, False)
+    assert serve.parse_args(["9000"]) == (9000, False)
+    assert serve.parse_args(["--lan"]) == (8000, True)
+    assert serve.parse_args(["--lan", "9000"]) == (9000, True)
+    assert serve.parse_args(["9000", "--lan"]) == (9000, True)
+
+
 if __name__ == "__main__":
     tests = {n: f for n, f in globals().items() if n.startswith("test_")}
     for name, fn in tests.items():
